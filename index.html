@@ -435,7 +435,7 @@
             <tr>
               <th>S.No</th><th>Firm Name</th><th>Type</th><th>Freq.</th>
               <th>Auth. Person</th><th>GST No</th><th>Username</th>
-              <th>Password</th><th>Mail</th><th>Mobile</th><th>Actions</th>
+              <th>Password</th><th>Mail</th><th>Mobile</th><th>Staff</th><th>Actions</th>
             </tr>
           </thead>
           <tbody id="firmTbody"></tbody>
@@ -1097,13 +1097,13 @@ function enterApp(name) {
   document.getElementById('staffScreen').classList.remove('visible');
   document.getElementById('appNav').classList.add('visible');
   document.getElementById('mainApp').classList.add('visible');
-  staffFilter = '';
+  staffFilter = name;          // start on my own files; the dropdown switches to anyone else's
   populateStaffFilter();
   const myFirms = getMyFirms();
   renderFirmTable(myFirms);
   updateMonthLabel();
   switchTab('firms');
-  showToast(`👋 Welcome, ${disp}! ${myFirms.length} client${myFirms.length!==1?'s':''} in the portal.`);
+  showToast(`👋 Welcome, ${disp}! Showing your ${myFirms.length} client${myFirms.length!==1?'s':''}. Use the dropdown to open anyone else's.`);
 }
 
 async function switchStaff() {
@@ -1124,12 +1124,20 @@ function populateStaffFilter() {
   const sel = document.getElementById('staffFilter');
   const names = new Set(allStaffNames);
   allFirms.forEach(f => { const n = (f.staff || '').toString().trim(); if (n) names.add(n); });
+  names.delete(currentStaff);
   sel.innerHTML = '';
   const add = (v, t) => { const o = document.createElement('option'); o.value = v; o.textContent = t; sel.appendChild(o); };
-  add('', `All staff (${allFirms.length} firms)`);
-  [...names].sort().forEach(n => add(n, n + (n === currentStaff ? ' (me)' : '')));
-  add(UNASSIGNED, 'Unassigned');
+  const mine = allFirms.filter(f => (f.staff || '').toString().trim().toLowerCase() === (currentStaff || '').toLowerCase()).length;
+  add(currentStaff, `👤 My files (${mine})`);
+  add('', `📁 All staff (${allFirms.length} firms)`);
+  [...names].sort().forEach(n => add(n, `${n}'s files`));
+  add(UNASSIGNED, 'Unassigned files');
   sel.value = staffFilter;
+}
+function viewStaffFiles(name) {
+  staffFilter = name || UNASSIGNED;
+  populateStaffFilter();
+  switchTab('firms');
 }
 function onStaffFilterChange() {
   staffFilter = document.getElementById('staffFilter').value;
@@ -1174,6 +1182,7 @@ function renderFirmTable(firms) {
       <td><span class="pw-plain">${esc(f.password)}</span></td>
       <td>${f.mail?`<a href="mailto:${esc(f.mail)}" style="color:var(--teal);text-decoration:none;">${esc(f.mail)}</a>`:'—'}</td>
       <td>${esc(f.mobile)}</td>
+      <td>${f.staff ? esc(f.staff) : '<span style="color:var(--red);font-size:12px;">Unassigned</span>'}</td>
       <td>
         <div class="action-btns">
           <button class="btn-edit" onclick="openEditModal(${jsArg(firmKey(f))})">✏ Edit</button>
@@ -1198,7 +1207,8 @@ function filterFirms() {
   renderFirmTable(base.filter(f =>
     (f.firmName||'').toLowerCase().includes(q) ||
     (f.authPerson||'').toLowerCase().includes(q) ||
-    (f.gstNo||'').toLowerCase().includes(q)
+    (f.gstNo||'').toLowerCase().includes(q) ||
+    (f.staff||'').toLowerCase().includes(q)
   ));
 }
 
@@ -2023,7 +2033,7 @@ function renderStaffStatus() {
         <span class="task-collapse" id="tc_${uid}">▼</span>
       </div>
       <div class="progress-bar-wrap" style="height:3px;border-radius:0;"><div class="progress-bar" style="width:${pct}%;border-radius:0;"></div></div>
-      <div class="task-firm-body" id="${uid}">${x.rows.join('') || '<div class="sx-firm" style="color:var(--slate);font-size:12.5px;">No returns fall due this month.</div>'}</div>`;
+      <div class="task-firm-body" id="${uid}"><div class="sx-firm"><button class="btn-view-due" onclick="viewStaffFiles(${jsArg(x.name)})">📁 Open ${esc(x.name || 'unassigned')} files &amp; passwords</button></div>${x.rows.join('') || '<div class="sx-firm" style="color:var(--slate);font-size:12.5px;">No returns fall due this month.</div>'}</div>`;
     grid.appendChild(block);
   });
   wrap.appendChild(grid);
