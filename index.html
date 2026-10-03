@@ -1,0 +1,2147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Saxena's Tax Consultancy – Client Portal</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&family=Crimson+Pro:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy:    #0D1B2A;
+    --deep:    #1A2E44;
+    --teal:    #1E6E7A;
+    --gold:    #C9A84C;
+    --gold-lt: #E4C97B;
+    --cream:   #F5F0E8;
+    --white:   #FFFFFF;
+    --slate:   #4A5568;
+    --border:  rgba(201,168,76,0.25);
+    --red:     #C0392B;
+    --green:   #1E7A4B;
+    --amber:   #D97706;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'DM Sans',sans-serif; background:var(--cream); color:var(--navy); min-height:100vh; overflow-x:hidden; }
+
+  /* ── LOADING ── */
+  #loadingScreen {
+    position:fixed; inset:0; background:var(--navy);
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    z-index:9999; transition:opacity .6s ease, visibility .6s ease;
+  }
+  #loadingScreen.hidden { opacity:0; visibility:hidden; pointer-events:none; }
+  .logo-ring {
+    width:110px; height:110px; border:3px solid var(--gold); border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    animation:ring-pulse 2s ease-in-out infinite; margin-bottom:28px;
+  }
+  @keyframes ring-pulse { 0%,100%{box-shadow:0 0 0 0 rgba(201,168,76,.4)} 50%{box-shadow:0 0 0 18px rgba(201,168,76,0)} }
+  .loading-firm { font-family:'Playfair Display',serif; font-size:26px; font-weight:700; color:var(--gold-lt); text-align:center; line-height:1.3; margin-bottom:6px; }
+  .loading-tag  { font-family:'Crimson Pro',serif; font-style:italic; font-size:15px; color:rgba(255,255,255,.5); letter-spacing:2px; margin-bottom:38px; }
+  .loading-bar-wrap { width:220px; height:3px; background:rgba(255,255,255,.12); border-radius:3px; overflow:hidden; }
+  .loading-bar { height:100%; background:linear-gradient(90deg,var(--teal),var(--gold)); border-radius:3px; width:0; transition:width .1s; }
+  .loading-status { margin-top:16px; color:rgba(255,255,255,.4); font-size:13px; letter-spacing:1px; min-height:20px; }
+
+  /* ── NAVBAR ── */
+  #appNav {
+    display:none; background:var(--navy); border-bottom:2px solid var(--gold);
+    padding:0 28px; height:62px; align-items:center; justify-content:space-between;
+    position:sticky; top:0; z-index:100; box-shadow:0 4px 20px rgba(0,0,0,.3);
+  }
+  #appNav.visible { display:flex; }
+  .nav-brand { display:flex; align-items:center; gap:12px; }
+  .nav-title { font-family:'Playfair Display',serif; font-size:17px; font-weight:700; color:var(--gold-lt); line-height:1.1; }
+  .nav-title small { display:block; font-family:'DM Sans',sans-serif; font-size:11px; font-weight:400; color:rgba(255,255,255,.45); letter-spacing:1px; }
+  .nav-right { display:flex; align-items:center; gap:14px; }
+  .staff-badge { background:rgba(201,168,76,.15); border:1px solid var(--border); border-radius:20px; padding:5px 14px; font-size:13px; font-weight:600; color:var(--gold-lt); }
+  .btn-switch { background:transparent; border:1px solid rgba(255,255,255,.2); color:rgba(255,255,255,.65); border-radius:6px; padding:6px 14px; font-size:12px; cursor:pointer; transition:all .2s; }
+  .btn-switch:hover { border-color:var(--gold); color:var(--gold-lt); }
+
+  /* ── STAFF SCREEN ── */
+  #staffScreen { display:none; min-height:100vh; padding:60px 20px; background:linear-gradient(135deg,var(--navy) 0%,var(--deep) 60%,#1E3A4A 100%); align-items:center; justify-content:center; flex-direction:column; }
+  #staffScreen.visible { display:flex; }
+  .staff-header { text-align:center; margin-bottom:42px; }
+  .staff-header h2 { font-family:'Playfair Display',serif; font-size:30px; font-weight:700; color:var(--gold-lt); margin-bottom:6px; }
+  .staff-header p  { color:rgba(255,255,255,.5); font-size:14px; }
+  .staff-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:16px; max-width:700px; width:100%; }
+  .staff-card { background:rgba(255,255,255,.05); border:1.5px solid rgba(201,168,76,.2); border-radius:14px; padding:28px 18px; text-align:center; cursor:pointer; transition:all .28s; }
+  .staff-card:hover { background:rgba(201,168,76,.12); border-color:var(--gold); transform:translateY(-4px); box-shadow:0 10px 30px rgba(0,0,0,.3); }
+  .staff-avatar { width:54px; height:54px; border-radius:50%; background:linear-gradient(135deg,var(--teal),var(--navy)); display:flex; align-items:center; justify-content:center; margin:0 auto 14px; font-size:22px; font-weight:700; color:var(--gold-lt); border:2px solid var(--gold); }
+  .staff-name  { font-size:14px; font-weight:600; color:var(--white); }
+  .staff-count { font-size:12px; color:rgba(255,255,255,.4); margin-top:4px; }
+  .staff-error { color:#ff8080; font-size:14px; margin-top:20px; text-align:center; }
+
+  /* ── MAIN APP ── */
+  #mainApp { display:none; }
+  #mainApp.visible { display:block; }
+  .app-container { max-width:1300px; margin:0 auto; padding:28px 20px 60px; }
+
+  /* ── TABS ── */
+  .tab-bar { display:flex; gap:4px; background:var(--white); border-radius:12px; padding:5px; box-shadow:0 2px 12px rgba(0,0,0,.08); margin-bottom:28px; flex-wrap:wrap; }
+  .tab-btn { flex:1; min-width:120px; padding:10px 16px; border:none; background:transparent; border-radius:9px; cursor:pointer; font-size:13.5px; font-weight:500; color:var(--slate); transition:all .22s; display:flex; align-items:center; justify-content:center; gap:7px; }
+  .tab-btn.active { background:var(--navy); color:var(--gold-lt); box-shadow:0 4px 14px rgba(13,27,42,.25); }
+  .tab-btn:not(.active):hover { background:var(--cream); }
+
+  /* ── ACTION BAR ── */
+  .action-bar { display:flex; align-items:center; gap:12px; margin-bottom:20px; flex-wrap:wrap; }
+  .search-box { flex:1; min-width:220px; position:relative; }
+  .search-box input { width:100%; padding:11px 16px 11px 42px; border:1.5px solid rgba(0,0,0,.1); border-radius:10px; background:var(--white); font-family:'DM Sans',sans-serif; font-size:14px; color:var(--navy); transition:border-color .2s; outline:none; }
+  .search-box input:focus { border-color:var(--teal); }
+  .search-icon { position:absolute; left:13px; top:50%; transform:translateY(-50%); color:var(--slate); font-size:16px; pointer-events:none; }
+  .btn-primary  { background:linear-gradient(135deg,var(--teal),var(--deep)); color:var(--white); border:none; padding:11px 22px; border-radius:10px; font-family:'DM Sans',sans-serif; font-size:13.5px; font-weight:600; cursor:pointer; transition:all .22s; display:flex; align-items:center; gap:7px; white-space:nowrap; }
+  .btn-primary:hover { transform:translateY(-2px); box-shadow:0 6px 20px rgba(30,110,122,.35); }
+  .btn-secondary { background:transparent; border:1.5px solid var(--teal); color:var(--teal); padding:10px 20px; border-radius:10px; cursor:pointer; font-family:'DM Sans',sans-serif; font-size:13px; font-weight:500; transition:all .2s; display:flex; align-items:center; gap:6px; white-space:nowrap; }
+  .btn-secondary:hover { background:var(--teal); color:var(--white); }
+
+  /* ── FIRM TABLE ── */
+  .table-wrap { background:var(--white); border-radius:14px; box-shadow:0 2px 16px rgba(0,0,0,.07); overflow:hidden; overflow-x:auto; }
+  .firm-table { width:100%; border-collapse:collapse; font-size:13px; }
+  .firm-table thead tr { background:var(--navy); color:var(--gold-lt); }
+  .firm-table thead th { padding:13px 12px; text-align:left; font-family:'DM Sans',sans-serif; font-weight:600; font-size:11.5px; letter-spacing:.5px; white-space:nowrap; }
+  .firm-table tbody tr { border-bottom:1px solid rgba(0,0,0,.05); transition:background .15s; }
+  .firm-table tbody tr:hover { background:#f0f7ff; }
+  .firm-table tbody td { padding:11px 12px; color:var(--navy); vertical-align:middle; }
+  .type-badge { display:inline-block; padding:3px 9px; border-radius:20px; font-size:10.5px; font-weight:600; text-transform:uppercase; letter-spacing:.5px; }
+  .type-regular     { background:#e8f4fd; color:#1A5276; }
+  .type-qrmp        { background:#fef9e7; color:#7D6608; }
+  .type-composition { background:#e8f8f5; color:#1E7A4B; }
+  /* Human-readable label map used by JS */
+  .freq-badge { display:inline-block; padding:3px 9px; border-radius:20px; font-size:10.5px; font-weight:600; background:#f3f0ff; color:#5B2C8D; }
+  .pw-plain { font-family:monospace; font-size:12.5px; color:var(--teal); letter-spacing:.5px; }
+  .action-btns { display:flex; gap:6px; }
+  .btn-edit { background:rgba(30,110,122,.1); border:1px solid rgba(30,110,122,.3); color:var(--teal); padding:5px 11px; border-radius:7px; font-size:11.5px; font-weight:500; cursor:pointer; transition:all .18s; }
+  .btn-edit:hover { background:var(--teal); color:var(--white); }
+  .btn-view-due { background:rgba(201,168,76,.1); border:1px solid rgba(201,168,76,.4); color:#8B6914; padding:5px 10px; border-radius:7px; font-size:11.5px; font-weight:500; cursor:pointer; transition:all .18s; }
+  .btn-view-due:hover { background:var(--gold); color:var(--white); }
+  .empty-state { text-align:center; padding:60px 20px; color:var(--slate); }
+  .empty-state .empty-icon { font-size:48px; margin-bottom:12px; }
+
+  /* ── MODALS ── */
+  .modal-overlay { display:none; position:fixed; inset:0; background:rgba(13,27,42,.75); backdrop-filter:blur(4px); z-index:1000; align-items:center; justify-content:center; padding:20px; }
+  .modal-overlay.open { display:flex; animation:fadeIn .22s ease; }
+  @keyframes fadeIn { from{opacity:0} to{opacity:1} }
+  .modal-box { background:var(--white); border-radius:18px; max-width:700px; width:100%; max-height:90vh; overflow-y:auto; box-shadow:0 24px 80px rgba(0,0,0,.35); animation:slideUp .28s ease; }
+  @keyframes slideUp { from{transform:translateY(30px);opacity:0} to{transform:translateY(0);opacity:1} }
+  .modal-header { background:var(--navy); padding:22px 28px; border-radius:18px 18px 0 0; display:flex; justify-content:space-between; align-items:center; }
+  .modal-title  { font-family:'Playfair Display',serif; font-size:20px; font-weight:700; color:var(--gold-lt); }
+  .modal-close  { background:rgba(255,255,255,.1); border:none; width:34px; height:34px; border-radius:50%; color:var(--white); font-size:18px; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:background .18s; }
+  .modal-close:hover { background:rgba(255,255,255,.2); }
+  .modal-body   { padding:26px 28px; }
+  .detail-grid  { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:20px; }
+  @media(max-width:540px){ .detail-grid{grid-template-columns:1fr} }
+  .detail-card  { background:var(--cream); border-radius:12px; padding:13px 15px; border-left:3px solid var(--teal); }
+  .detail-label { font-size:10.5px; font-weight:600; text-transform:uppercase; letter-spacing:.8px; color:var(--slate); margin-bottom:5px; }
+  .detail-value { font-size:13.5px; font-weight:500; color:var(--navy); word-break:break-all; }
+
+  .due-dates-section { margin-top:22px; }
+  .due-dates-title { font-family:'Playfair Display',serif; font-size:16px; font-weight:600; color:var(--navy); margin-bottom:14px; }
+  .due-table { width:100%; border-collapse:collapse; font-size:12.5px; }
+  .due-table thead tr  { background:#f0f7ff; }
+  .due-table thead th  { padding:10px 12px; text-align:left; font-weight:600; color:var(--navy); border-bottom:2px solid #dce8f5; }
+  .due-table tbody td  { padding:9px 12px; border-bottom:1px solid rgba(0,0,0,.05); }
+  .due-table tbody tr:hover { background:#f9fbfd; }
+  .item-days { font-size:11px; font-weight:700; padding:3px 9px; border-radius:12px; white-space:nowrap; }
+  .days-urgent { background:#fde8e8; color:var(--red); }
+  .days-soon   { background:#fef3cd; color:#7D4E03; }
+  .days-ok     { background:#d9f4e7; color:var(--green); }
+
+  /* ── FORM ── */
+  .form-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  @media(max-width:540px){ .form-grid{grid-template-columns:1fr} }
+  .form-group { display:flex; flex-direction:column; gap:6px; }
+  .form-group.full { grid-column:1/-1; }
+  .form-group label { font-size:11.5px; font-weight:600; text-transform:uppercase; letter-spacing:.6px; color:var(--slate); }
+  .form-group input,.form-group select { padding:10px 14px; border:1.5px solid rgba(0,0,0,.12); border-radius:9px; font-family:'DM Sans',sans-serif; font-size:14px; color:var(--navy); background:var(--white); outline:none; transition:border-color .2s; }
+  .form-group input:focus,.form-group select:focus { border-color:var(--teal); }
+  .form-actions { display:flex; gap:10px; justify-content:flex-end; margin-top:22px; }
+  .btn-cancel { padding:10px 22px; border-radius:9px; border:1.5px solid rgba(0,0,0,.15); background:transparent; color:var(--slate); font-family:'DM Sans',sans-serif; font-size:13.5px; cursor:pointer; transition:all .18s; }
+  .btn-cancel:hover { border-color:var(--red); color:var(--red); }
+  .btn-save { padding:10px 26px; border-radius:9px; background:linear-gradient(135deg,var(--teal),var(--deep)); color:var(--white); border:none; font-family:'DM Sans',sans-serif; font-size:13.5px; font-weight:600; cursor:pointer; transition:all .2s; }
+  .btn-save:hover { transform:translateY(-1px); box-shadow:0 4px 14px rgba(30,110,122,.3); }
+
+  /* ── DUE DATES MODULE ── */
+  #dueModule { display:none; }
+  #dueModule.visible { display:block; }
+  .summary-row { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:14px; margin-bottom:24px; }
+  .summary-card { background:var(--white); border-radius:12px; padding:18px 20px; box-shadow:0 2px 10px rgba(0,0,0,.06); border-top:3px solid var(--teal); }
+  .summary-card.warn   { border-top-color:var(--amber); }
+  .summary-card.danger { border-top-color:var(--red); }
+  .summary-num   { font-size:30px; font-weight:700; color:var(--navy); }
+  .summary-label { font-size:12px; color:var(--slate); margin-top:3px; }
+  .due-filter-bar { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:18px; }
+  .filter-chip { padding:6px 16px; border-radius:20px; border:1.5px solid rgba(0,0,0,.12); background:var(--white); font-size:12.5px; font-weight:500; cursor:pointer; transition:all .18s; color:var(--slate); }
+  .filter-chip.active { background:var(--navy); color:var(--gold-lt); border-color:var(--navy); }
+  .due-cards-wrap { display:grid; gap:16px; }
+  .due-firm-card { background:var(--white); border-radius:14px; box-shadow:0 2px 12px rgba(0,0,0,.07); overflow:hidden; }
+  .due-firm-header { padding:14px 20px; background:var(--deep); display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; cursor:pointer; }
+  .due-firm-name { font-family:'Playfair Display',serif; font-size:15px; font-weight:600; color:var(--gold-lt); }
+  .meta-pill { padding:3px 10px; border-radius:12px; font-size:11px; font-weight:600; background:rgba(255,255,255,.12); color:rgba(255,255,255,.8); }
+  .collapse-btn { color:rgba(255,255,255,.6); font-size:18px; transition:transform .2s; }
+  .collapse-btn.open { transform:rotate(180deg); }
+  .due-firm-body { padding:14px 18px; display:none; }
+  .due-firm-body.open { display:block; }
+  .upcoming-item { display:flex; align-items:center; gap:12px; padding:9px 13px; border-radius:10px; margin-bottom:7px; border-left:4px solid transparent; flex-wrap:wrap; }
+  .upcoming-item.urgent { background:#fff5f5; border-left-color:var(--red); }
+  .upcoming-item.soon   { background:#fffaf0; border-left-color:var(--amber); }
+  .upcoming-item.ok     { background:#f0faf4; border-left-color:var(--green); }
+  .item-form-tag { font-family:monospace; font-size:12.5px; font-weight:700; background:rgba(0,0,0,.06); padding:3px 9px; border-radius:5px; min-width:68px; text-align:center; }
+  .item-purpose  { flex:1; font-size:13px; color:var(--slate); }
+  .item-date     { font-size:13px; font-weight:600; color:var(--navy); white-space:nowrap; }
+
+  /* ── MONTHLY TASKS ── */
+  .month-nav { display:flex; align-items:center; gap:12px; margin-bottom:22px; flex-wrap:wrap; }
+  .month-nav h3 { font-family:'Playfair Display',serif; font-size:20px; font-weight:700; color:var(--navy); flex:1; }
+  .month-btn { background:var(--white); border:1.5px solid rgba(0,0,0,.12); border-radius:8px; padding:7px 14px; cursor:pointer; font-size:14px; font-weight:600; color:var(--slate); transition:all .18s; }
+  .month-btn:hover { border-color:var(--teal); color:var(--teal); }
+
+  .tasks-top-section { margin-bottom:28px; }
+  .tasks-top-header { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:14px; flex-wrap:wrap; }
+  .tasks-top-header h4 { font-family:'Playfair Display',serif; font-size:17px; font-weight:700; color:var(--navy); }
+  .btn-gen-tasks { background:linear-gradient(135deg,var(--gold),#a07830); color:var(--white); border:none; padding:9px 18px; border-radius:9px; font-family:'DM Sans',sans-serif; font-size:13px; font-weight:600; cursor:pointer; transition:all .2s; display:flex; align-items:center; gap:6px; }
+  .btn-gen-tasks:hover { transform:translateY(-1px); box-shadow:0 4px 14px rgba(201,168,76,.4); }
+  .btn-gen-tasks:disabled { opacity:.6; cursor:not-allowed; transform:none; }
+
+  .task-overview-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:12px; }
+
+  .task-firm-block { background:var(--white); border-radius:12px; box-shadow:0 2px 10px rgba(0,0,0,.06); overflow:hidden; }
+  .task-firm-head { background:var(--deep); padding:11px 16px; display:flex; align-items:center; justify-content:space-between; gap:8px; cursor:pointer; }
+  .task-firm-head-name { font-weight:600; font-size:13.5px; color:var(--gold-lt); flex:1; }
+  .task-firm-head-meta { display:flex; gap:6px; align-items:center; }
+  .task-collapse { color:rgba(255,255,255,.5); font-size:14px; transition:transform .2s; }
+  .task-collapse.open { transform:rotate(180deg); }
+  .task-firm-body { display:none; padding:0; }
+  .task-firm-body.open { display:block; }
+
+  .task-row { display:flex; align-items:center; gap:10px; padding:9px 14px; border-bottom:1px solid rgba(0,0,0,.05); transition:background .12s; }
+  .task-row:last-child { border-bottom:none; }
+  .task-row:hover { background:#f8fbff; }
+  .task-check { width:18px; height:18px; border-radius:4px; border:2px solid #ccc; cursor:pointer; appearance:none; -webkit-appearance:none; flex-shrink:0; transition:all .15s; position:relative; }
+  .task-check:checked { background:var(--green); border-color:var(--green); }
+  .task-check:checked::after { content:'✓'; position:absolute; top:-1px; left:2px; font-size:12px; color:#fff; font-weight:700; }
+  .task-form { font-family:monospace; font-size:12px; font-weight:700; background:rgba(0,0,0,.06); padding:2px 8px; border-radius:4px; min-width:60px; text-align:center; flex-shrink:0; }
+  .task-purpose { flex:1; font-size:12.5px; color:var(--slate); }
+  .task-due { font-size:12px; font-weight:600; color:var(--navy); white-space:nowrap; flex-shrink:0; }
+  .task-status-badge { font-size:10.5px; font-weight:700; padding:2px 8px; border-radius:10px; white-space:nowrap; flex-shrink:0; }
+  .status-done    { background:#d9f4e7; color:var(--green); }
+  .status-pending { background:#fde8e8; color:var(--red); }
+  .status-soon    { background:#fef3cd; color:#7D4E03; }
+  .task-note-btn { background:none; border:none; cursor:pointer; font-size:13px; color:#aaa; transition:color .15s; flex-shrink:0; padding:2px 4px; }
+  .task-note-btn:hover { color:var(--teal); }
+  .task-note-row { padding:6px 14px 10px 46px; background:#f9fbff; border-bottom:1px solid rgba(0,0,0,.05); display:none; }
+  .task-note-row.open { display:flex; gap:8px; align-items:center; }
+  .task-note-input { flex:1; border:1.5px solid rgba(0,0,0,.1); border-radius:7px; padding:6px 10px; font-size:12.5px; font-family:'DM Sans',sans-serif; outline:none; }
+  .task-note-input:focus { border-color:var(--teal); }
+  .task-note-save { background:var(--teal); color:#fff; border:none; border-radius:6px; padding:6px 12px; font-size:12px; cursor:pointer; white-space:nowrap; }
+
+  .progress-bar-wrap { height:4px; background:rgba(0,0,0,.08); border-radius:4px; overflow:hidden; margin-top:6px; }
+  .progress-bar { height:100%; background:linear-gradient(90deg,var(--teal),var(--green)); border-radius:4px; transition:width .4s ease; }
+
+  .section-divider { font-family:'Playfair Display',serif; font-size:16px; font-weight:700; color:var(--navy); margin:28px 0 14px; display:flex; align-items:center; gap:10px; }
+  .section-divider::after { content:''; flex:1; height:1px; background:rgba(0,0,0,.1); }
+
+  /* ── DUE DATES SEARCH ── */
+  .due-search-bar {
+    position: relative;
+    margin-bottom: 18px;
+  }
+  .due-search-bar input {
+    width: 100%;
+    padding: 11px 44px 11px 42px;
+    border: 1.5px solid rgba(0,0,0,.1);
+    border-radius: 10px;
+    background: var(--white);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    color: var(--navy);
+    outline: none;
+    transition: border-color .2s, box-shadow .2s;
+    box-shadow: 0 2px 8px rgba(0,0,0,.05);
+  }
+  .due-search-bar input:focus {
+    border-color: var(--teal);
+    box-shadow: 0 0 0 3px rgba(30,110,122,.1);
+  }
+  .due-search-icon {
+    position: absolute;
+    left: 13px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 16px;
+    pointer-events: none;
+  }
+  .due-search-clear {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(0,0,0,.08);
+    border: none;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    font-size: 12px;
+    color: var(--slate);
+    cursor: pointer;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    transition: background .15s;
+  }
+  .due-search-clear.visible { display: flex; }
+  .due-search-clear:hover { background: rgba(192,57,43,.15); color: var(--red); }
+  .due-search-count {
+    font-size: 12.5px;
+    color: var(--slate);
+    margin-bottom: 14px;
+    margin-top: -10px;
+  }
+  .due-search-count strong { color: var(--teal); }
+
+  /* ── TOAST ── */
+  #toast { position:fixed; bottom:28px; right:28px; background:var(--deep); color:var(--white); padding:13px 22px; border-radius:12px; font-size:14px; font-weight:500; box-shadow:0 8px 30px rgba(0,0,0,.3); border-left:4px solid var(--gold); z-index:9999; display:none; animation:slideIn .25s ease; }
+  @keyframes slideIn { from{transform:translateX(60px);opacity:0} to{transform:translateX(0);opacity:1} }
+
+  @media(max-width:700px){
+    .action-bar { flex-direction:column; align-items:stretch; }
+    .btn-primary,.btn-secondary { justify-content:center; }
+  }
+
+  /* ── E-WAY BILL MODULE ── */
+  #ewayModule { display:none; }
+  #ewayModule.visible { display:block; }
+
+  .eway-table { width:100%; border-collapse:collapse; font-size:13px; }
+  .eway-table thead tr { background:var(--navy); color:var(--gold-lt); }
+  .eway-table thead th { padding:13px 12px; text-align:left; font-family:'DM Sans',sans-serif; font-weight:600; font-size:11.5px; letter-spacing:.5px; white-space:nowrap; }
+  .eway-table tbody tr { border-bottom:1px solid rgba(0,0,0,.05); transition:background .15s; }
+  .eway-table tbody tr:hover { background:#f0f7ff; }
+  .eway-table tbody td { padding:11px 12px; color:var(--navy); vertical-align:middle; }
+
+  .eway-badge-set  { display:inline-block; padding:3px 9px; border-radius:20px; font-size:10.5px; font-weight:600; background:#e8f8f5; color:#1E7A4B; }
+  .eway-badge-none { display:inline-block; padding:3px 9px; border-radius:20px; font-size:10.5px; font-weight:600; background:#fde8e8; color:var(--red); }
+
+  .eway-summary-strip { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:14px; margin-bottom:24px; }
+  .eway-stat { background:var(--white); border-radius:12px; padding:16px 20px; box-shadow:0 2px 10px rgba(0,0,0,.06); border-top:3px solid var(--teal); }
+  .eway-stat.warn { border-top-color:var(--amber); }
+  .eway-stat-num   { font-size:28px; font-weight:700; color:var(--navy); }
+  .eway-stat-label { font-size:12px; color:var(--slate); margin-top:3px; }
+
+  .btn-eway { background:rgba(201,168,76,.1); border:1px solid rgba(201,168,76,.4); color:#8B6914; padding:5px 10px; border-radius:7px; font-size:11.5px; font-weight:500; cursor:pointer; transition:all .18s; }
+  .btn-eway:hover { background:var(--gold); color:var(--white); }
+
+  /* EWB modal accent */
+  .ewb-section-divider { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:1px; color:var(--slate); margin:18px 0 10px; padding-bottom:6px; border-bottom:1px solid rgba(0,0,0,.08); grid-column:1/-1; }
+  .btn-login { background:rgba(30,110,122,.1); border:1px solid rgba(30,110,122,.35); color:var(--teal); padding:5px 10px; border-radius:7px; font-size:11.5px; font-weight:600; cursor:pointer; transition:all .18s; white-space:nowrap; }
+  .btn-login:hover { background:var(--teal); color:var(--white); }
+  .login-error { color:var(--red); font-size:13px; min-height:18px; margin-top:10px; }
+  .bookmarklet-link { display:inline-block; padding:10px 20px; border-radius:10px; background:linear-gradient(135deg,var(--gold),#a07830); color:#fff; font-weight:700; text-decoration:none; cursor:grab; box-shadow:0 4px 14px rgba(201,168,76,.4); }
+  #statusModule { display:none; }
+  #statusModule.visible { display:block; }
+  .staff-filter-bar { display:flex; align-items:center; gap:10px; margin-bottom:16px; font-size:13px; font-weight:500; color:var(--slate); flex-wrap:wrap; }
+  .staff-filter-bar select { padding:8px 12px; border:1.5px solid rgba(0,0,0,.12); border-radius:9px; font-family:'DM Sans',sans-serif; font-size:13.5px; background:var(--white); color:var(--navy); outline:none; }
+  .sx-firm { padding:9px 14px; border-bottom:1px solid rgba(0,0,0,.05); }
+  .sx-firm:last-child { border-bottom:none; }
+  .sx-firm-name { font-size:13px; font-weight:600; color:var(--navy); margin-bottom:4px; }
+  .sx-chip { display:inline-block; margin:2px 5px 2px 0; padding:3px 10px; border-radius:12px; font-size:11px; font-weight:700; white-space:nowrap; }
+  .sx-neutral { background:#eef1f5; color:var(--slate); }
+</style>
+</head>
+<body>
+
+<!-- LOADING SCREEN -->
+<div id="loadingScreen">
+  <div class="logo-ring">
+    <svg width="72" height="72" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="50" cy="50" r="46" fill="none" stroke="#C9A84C" stroke-width="2.5"/>
+      <polygon points="50,12 61,40 92,40 68,57 77,85 50,68 23,85 32,57 8,40 39,40" fill="none" stroke="#C9A84C" stroke-width="2" opacity="0.5"/>
+      <text x="50" y="45" text-anchor="middle" font-family="Playfair Display,serif" font-size="22" font-weight="700" fill="#C9A84C">CA</text>
+      <text x="50" y="62" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="8.5" fill="rgba(255,255,255,0.6)" letter-spacing="2">ICAI</text>
+    </svg>
+  </div>
+  <div class="loading-firm">Saxena's Tax<br>Consultancy</div>
+  <div class="loading-tag">Chartered Accountants</div>
+  <div class="loading-bar-wrap"><div class="loading-bar" id="loadBar"></div></div>
+  <div class="loading-status" id="loadStatus">Connecting to Google Sheet…</div>
+</div>
+
+<!-- NAVBAR -->
+<nav id="appNav">
+  <div class="nav-brand">
+    <svg width="36" height="36" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="50" cy="50" r="46" fill="none" stroke="#C9A84C" stroke-width="3"/>
+      <text x="50" y="58" text-anchor="middle" font-family="Playfair Display,serif" font-size="28" font-weight="700" fill="#C9A84C">CA</text>
+    </svg>
+    <div class="nav-title">Saxena's Tax Consultancy<small>Client Management Portal</small></div>
+  </div>
+  <div class="nav-right">
+    <div class="staff-badge">👤 <span id="staffNameDisplay">—</span></div>
+    <button class="btn-switch" onclick="openPwModal()">🔑 Password</button>
+    <button class="btn-switch" onclick="switchStaff()">Log out</button>
+  </div>
+</nav>
+
+<!-- STAFF SELECTION -->
+<div id="staffScreen">
+  <div class="staff-header">
+    <h2>Select Staff Member</h2>
+    <p>Choose your profile and enter your password</p>
+  </div>
+  <div class="staff-grid" id="staffGrid"></div>
+  <div class="staff-error" id="staffError"></div>
+</div>
+
+<!-- MAIN APP -->
+<div id="mainApp">
+  <div class="app-container">
+
+    <div class="tab-bar">
+      <button class="tab-btn active" onclick="switchTab('firms')" id="tab-firms">🏢 Client Firms</button>
+      <button class="tab-btn" onclick="switchTab('due')" id="tab-due">📅 Due Dates</button>
+      <button class="tab-btn" onclick="switchTab('eway')" id="tab-eway">🚚 E-Way Bill</button>
+      <button class="tab-btn" onclick="switchTab('status')" id="tab-status">📊 Staff Status</button>
+    </div>
+
+    <div class="staff-filter-bar" id="staffFilterBar">
+      <span>👥 Showing clients of:</span>
+      <select id="staffFilter" onchange="onStaffFilterChange()"></select>
+    </div>
+
+    <!-- STAFF STATUS TAB -->
+    <div id="statusModule">
+      <div class="month-nav">
+        <button class="month-btn" onclick="changeMonth(-1)">◀ Prev</button>
+        <h3 id="statusMonthLabel">— —</h3>
+        <button class="month-btn" onclick="changeMonth(1)">Next ▶</button>
+        <button class="btn-secondary" onclick="refreshTasks()" style="padding:8px 16px;font-size:13px;">⟳ Refresh</button>
+      </div>
+      <div class="summary-row" id="statusSummary"></div>
+      <div id="statusWrap"></div>
+    </div>
+
+    <!-- FIRMS TAB -->
+    <div id="firmsTab">
+      <div class="action-bar">
+        <div class="search-box">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="searchInput" placeholder="Search firm, authorised person or GST No…" oninput="filterFirms()">
+        </div>
+        <button class="btn-primary" onclick="openAddModal()">＋ Add New Firm</button>
+        <button class="btn-secondary" onclick="refreshData()">⟳ Refresh</button>
+        <button class="btn-secondary" onclick="openModal('autoTypeModal')">🔐 Auto-Login Setup</button>
+      </div>
+      <div class="table-wrap">
+        <table class="firm-table" id="firmTable">
+          <thead>
+            <tr>
+              <th>S.No</th><th>Firm Name</th><th>Type</th><th>Freq.</th>
+              <th>Auth. Person</th><th>GST No</th><th>Username</th>
+              <th>Password</th><th>Mail</th><th>Mobile</th><th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="firmTbody"></tbody>
+        </table>
+        <div class="empty-state" id="emptyState" style="display:none;">
+          <div class="empty-icon">📋</div>
+          <p id="emptyMsg">No firms found.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- DUE DATES TAB -->
+    <div id="dueModule">
+
+      <!-- Month Navigator -->
+      <div class="month-nav">
+        <button class="month-btn" onclick="changeMonth(-1)">◀ Prev</button>
+        <h3 id="monthLabel">— —</h3>
+        <button class="month-btn" onclick="changeMonth(1)">Next ▶</button>
+        <button class="btn-gen-tasks" id="genBtn" onclick="generateMonthTasks()" title="Fill all missing tasks for the current financial year (Apr–Mar) across all firms">⚡ Fill Missing Tasks</button>
+        <button class="btn-secondary" onclick="refreshTasks()" style="padding:8px 16px;font-size:13px;">⟳ Refresh</button>
+      </div>
+
+      <!-- Summary strip -->
+      <div class="summary-row" id="summaryRow"></div>
+
+      <!-- Filter chips -->
+      <div class="due-filter-bar">
+        <div class="filter-chip active" onclick="filterDue('all',this)">All Firms</div>
+        <div class="filter-chip" onclick="filterDue('Regular',this)">Regular Monthly</div>
+        <div class="filter-chip" onclick="filterDue('QRMP',this)">Regular Quarterly (QRMP)</div>
+        <div class="filter-chip" onclick="filterDue('Composition',this)">Composition</div>
+      </div>
+
+      <!-- Due Dates Search -->
+      <div class="due-search-bar">
+        <span class="due-search-icon">🔍</span>
+        <input type="text" id="dueSearchInput" placeholder="Search firm name or proprietor / authorised person…" oninput="filterDueSearch()">
+        <button class="due-search-clear" id="dueSearchClear" onclick="clearDueSearch()" title="Clear search">✕</button>
+      </div>
+
+      <!-- Task grid per firm -->
+      <div id="tasksWrap"></div>
+
+    </div>
+
+    <!-- E-WAY BILL TAB -->
+    <div id="ewayModule">
+
+      <!-- Summary strip -->
+      <div class="eway-summary-strip" id="ewaySummary"></div>
+
+      <!-- Action bar -->
+      <div class="action-bar">
+        <div class="search-box">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="ewaySearch" placeholder="Search firm name, GST No or authorised person…" oninput="filterEwayTable()">
+        </div>
+        <button class="btn-secondary" onclick="refreshEwayData()">⟳ Refresh</button>
+      </div>
+
+      <!-- Table -->
+      <div class="table-wrap">
+        <table class="eway-table" id="ewayTable">
+          <thead>
+            <tr>
+              <th>S.No</th>
+              <th>Firm Name</th>
+              <th>GST No</th>
+              <th>Auth. Person</th>
+              <th>EWB Username</th>
+              <th>EWB Password</th>
+              <th>Reg. Mobile</th>
+              <th>Reg. Email</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="ewayTbody"></tbody>
+        </table>
+        <div class="empty-state" id="ewayEmpty" style="display:none;">
+          <div class="empty-icon">🚚</div>
+          <p>No firms found.</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- E-WAY BILL EDIT MODAL -->
+<div class="modal-overlay" id="ewayModal">
+  <div class="modal-box">
+    <div class="modal-header" style="background:linear-gradient(135deg,#1A3A4A,var(--navy));">
+      <div class="modal-title" id="ewayModalTitle">🚚 E-Way Bill Credentials</div>
+      <button class="modal-close" onclick="closeModal('ewayModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <!-- Read-only firm info -->
+      <div id="ewayFirmInfo" style="background:var(--cream);border-radius:10px;padding:12px 16px;margin-bottom:20px;display:flex;gap:20px;flex-wrap:wrap;border-left:3px solid var(--gold);"></div>
+      <form id="ewayForm" novalidate onsubmit="saveEwayCredentials(event)">
+        <div class="form-grid">
+          <div class="ewb-section-divider">E-Way Bill Portal Credentials</div>
+          <div class="form-group">
+            <label>EWB Username / User ID</label>
+            <input type="text" id="ew_username" placeholder="E-way bill portal username">
+          </div>
+          <div class="form-group">
+            <label>EWB Password</label>
+            <input type="text" id="ew_password" placeholder="E-way bill portal password">
+          </div>
+          <div class="ewb-section-divider">Registered Contact Details</div>
+          <div class="form-group">
+            <label>Registered Mobile</label>
+            <input type="tel" id="ew_mobile" placeholder="Mobile linked to EWB portal" maxlength="10">
+          </div>
+          <div class="form-group">
+            <label>Registered Email</label>
+            <input type="email" id="ew_email" placeholder="Email linked to EWB portal">
+          </div>
+          <div class="form-group full">
+            <label>Notes / Remarks</label>
+            <input type="text" id="ew_notes" placeholder="Any additional notes (optional)">
+          </div>
+        </div>
+        <div class="form-actions">
+          <button type="button" class="btn-cancel" onclick="closeModal('ewayModal')">Cancel</button>
+          <button type="submit" class="btn-save" id="ewaySaveBtn">💾 Save Credentials</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- DETAIL MODAL -->
+<div class="modal-overlay" id="detailModal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div class="modal-title" id="detailModalTitle">Firm Details</div>
+      <button class="modal-close" onclick="closeModal('detailModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="detail-grid" id="detailGrid"></div>
+      <div class="due-dates-section" id="firmDueDates"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ADD / EDIT MODAL -->
+<div class="modal-overlay" id="editModal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div class="modal-title" id="editModalTitle">Add Firm</div>
+      <button class="modal-close" onclick="closeModal('editModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <form id="firmForm" novalidate onsubmit="saveFirm(event)">
+        <div class="form-grid">
+          <div class="form-group full">
+            <label>Firm Name</label>
+            <input type="text" id="f_firmName" placeholder="ABC Pvt. Ltd.">
+          </div>
+          <div class="form-group">
+            <label>GST Type</label>
+            <select id="f_type" onchange="updateFrequency()">
+              <option value="">Select Type</option>
+              <option value="Regular">Regular Monthly</option>
+              <option value="QRMP">Regular Quarterly (QRMP)</option>
+              <option value="Composition">Composition</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Frequency</label>
+            <select id="f_frequency">
+              <option value="">Select Frequency</option>
+              <option value="Monthly">Monthly</option>
+              <option value="Quarterly">Quarterly</option>
+              <option value="Annual">Annual</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Authorised Person</label>
+            <input type="text" id="f_authPerson" placeholder="Full name">
+          </div>
+          <div class="form-group">
+            <label>GST Number</label>
+            <input type="text" id="f_gstNo" placeholder="27AAPFU0939F1ZV" maxlength="15">
+          </div>
+          <div class="form-group">
+            <label>Username</label>
+            <input type="text" id="f_username" placeholder="GST portal username">
+          </div>
+          <div class="form-group">
+            <label>Password</label>
+            <input type="text" id="f_password" placeholder="Password">
+          </div>
+          <div class="form-group">
+            <label>Email ID</label>
+            <input type="email" id="f_mail" placeholder="email@domain.com">
+          </div>
+          <div class="form-group">
+            <label>Mobile Number</label>
+            <input type="tel" id="f_mobile" placeholder="9876543210" maxlength="10">
+          </div>
+          <div class="form-group">
+            <label>Assigned Staff</label>
+            <select id="f_staff">
+              <option value="">Select Staff</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-actions">
+          <button type="button" class="btn-cancel" onclick="closeModal('editModal')">Cancel</button>
+          <button type="submit" class="btn-save" id="saveBtn">💾 Save Firm</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- STAFF LOGIN -->
+<div class="modal-overlay" id="loginModal">
+  <div class="modal-box" style="max-width:420px;">
+    <div class="modal-header"><div class="modal-title" id="loginTitle">Staff Login</div><button class="modal-close" onclick="closeModal('loginModal')">✕</button></div>
+    <div class="modal-body">
+      <form novalidate onsubmit="submitLogin(event)">
+        <div class="form-group"><label>Password</label><input type="password" id="login_password" autocomplete="current-password"></div>
+        <div class="login-error" id="loginError"></div>
+        <div class="form-actions"><button type="button" class="btn-cancel" onclick="closeModal('loginModal')">Cancel</button><button type="submit" class="btn-save" id="loginBtn">🔓 Log in</button></div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- CHANGE PASSWORD -->
+<div class="modal-overlay" id="pwModal">
+  <div class="modal-box" style="max-width:420px;">
+    <div class="modal-header"><div class="modal-title">🔑 Change Password</div><button class="modal-close" onclick="closeModal('pwModal')">✕</button></div>
+    <div class="modal-body">
+      <form novalidate onsubmit="submitPwChange(event)">
+        <div class="form-grid" style="grid-template-columns:1fr;">
+          <div class="form-group"><label>Current Password</label><input type="password" id="pw_old" autocomplete="current-password"></div>
+          <div class="form-group"><label>New Password (min 6 characters)</label><input type="password" id="pw_new" autocomplete="new-password"></div>
+          <div class="form-group"><label>Confirm New Password</label><input type="password" id="pw_new2" autocomplete="new-password"></div>
+        </div>
+        <div class="login-error" id="pwError"></div>
+        <div class="form-actions"><button type="button" class="btn-cancel" onclick="closeModal('pwModal')">Cancel</button><button type="submit" class="btn-save" id="pwBtn">Save</button></div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- AUTO-LOGIN SETUP -->
+<div class="modal-overlay" id="autoTypeModal">
+  <div class="modal-box" style="max-width:560px;">
+    <div class="modal-header"><div class="modal-title">🔐 GST Auto-Login Setup</div><button class="modal-close" onclick="closeModal('autoTypeModal')">✕</button></div>
+    <div class="modal-body" style="font-size:13.5px;line-height:1.7;color:var(--slate);">
+      <p><b>One-time setup:</b> drag this button onto your browser's bookmarks bar.</p>
+      <p style="margin:14px 0;"><a id="bookmarkletLink" class="bookmarklet-link" href="#" onclick="alert('Drag this button to your bookmarks bar – do not click it here.');return false;">⌨ GST Auto-Type</a></p>
+      <p><b>Every login:</b></p>
+      <ol style="padding-left:20px;">
+        <li>Click <b>🔐 Login</b> beside the firm – the GST login page opens in a new tab.</li>
+        <li>Click the <b>GST Auto-Type</b> bookmark in that tab – it types the username and password one key at a time.</li>
+        <li>Type the captcha yourself and press Login.</li>
+      </ol>
+      <p style="margin-top:10px;font-size:12px;">A website cannot control another website, so the bookmark does the typing on the GST page. Nothing is copied to the clipboard.</p>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ================================================================
+//  CONFIGURATION
+// ================================================================
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzzqNCapOCMNqd1P2NVvvJJNPxVqHn4cJ7p-T9qyJjSAx5umW22FhVI6qU4CaBYhwYp/exec';
+const SPREADSHEET_ID  = '1Avi0sZGGaAjYkN9gErXj9u4dpW9QBYlI_qiKknLc0NA';
+
+// ================================================================
+//  NOTES ON APPS SCRIPT DEPLOYMENT
+//  The Apps Script (Code.gs) handles reads via doGet() and writes
+//  via doPost(). Both are already implemented correctly in Code.gs.
+//
+//  DEPLOY SETTINGS (required for POST to work):
+//    Deploy → New Deployment → Web App
+//    Execute as : Me
+//    Access     : Anyone
+//
+//  After re-deploying, update APPS_SCRIPT_URL below with the new URL.
+//  (Each new deployment gets a new URL — always use the latest.)
+// ================================================================
+// ── EXPECTED APPS SCRIPT CONTRACT (new script to follow) ──
+// Every write payload carries `log: [ {timestamp, isoTime, editedBy, action, module,
+//   firmKey, firmName, gstNo, detail, field, oldValue, newValue} ]` -> append each to a "Change Log" sheet.
+// Firms now carry a unique `firmId` (new firms only; add a firmId column). Locate rows by firmId, else gstNo, else sno.
+// `edit` sends row.gstNo = ORIGINAL gst (may be blank), row.newGstNo = value to write, row.firmId, row.firmKey.
+// Tasks / EwayBill rows carry `firmKey` (= firmId, or gstNo for older firms) besides gstNo.
+// When a GST No is changed, update gstNo/firmKey in Tasks and EwayBill rows too.
+async function fetchJson(url, opts) {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 60000);
+  try {
+    const res = await fetch(url, { ...opts, redirect: 'follow', signal: ctrl.signal });
+    const text = await res.text();
+    let data;
+    try { data = JSON.parse(text); } catch(e) { throw new Error('Invalid response from server: ' + text.slice(0,120)); }
+    if (data && data.authError) { forceLogout(); throw new Error(data.error); }
+    return data;
+  } catch(e) {
+    if (e.name === 'AbortError') throw new Error('Request timed out. Please try again.');
+    throw e;
+  } finally { clearTimeout(timer); }
+}
+async function apiGet(params) {
+  const url = new URL(APPS_SCRIPT_URL);
+  Object.entries(params).forEach(([k,v]) => url.searchParams.set(k, String(v)));
+  if (sessionToken) url.searchParams.set('token', sessionToken);
+  return fetchJson(url.toString(), { method: 'GET' });
+}
+async function apiPost(payload) {
+  return fetchJson(APPS_SCRIPT_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(sessionToken ? { ...payload, token: sessionToken } : payload) });
+}
+async function softGet(params) {
+  try { const d = await apiGet(params); return (d && d.error) ? [] : d; } catch(e) { console.warn(params.action, e); return []; }
+}
+
+// ================================================================
+//  GST DUE DATE RULES
+//  Returns tasks relevant for a given month/year
+//  Each rule: { form, purpose, dueFn(month0, year) → Date|null }
+// ================================================================
+const MONTH_NAMES = ['January','February','March','April','May','June',
+                     'July','August','September','October','November','December'];
+
+// For Regular Monthly – tasks repeat every month
+const RULES_REGULAR = [
+  { form:'GSTR-1',  purpose:'Outward Supplies',                         dueDay: 11,  annual:false },
+  { form:'GSTR-3B', purpose:'Summary Return & Tax Payment',             dueDay: 20,  annual:false },
+  { form:'GSTR-2B', purpose:'Reconciliation',                           dueDay: 14,  annual:false },
+  { form:'GSTR-9',  purpose:'Annual Return (if applicable)',            dueDay: null, annual:true, annualMonth:11, annualDay:31 },
+  { form:'GSTR-9C', purpose:'Reconciliation Statement (if applicable)', dueDay: null, annual:true, annualMonth:11, annualDay:31 },
+];
+
+// For QRMP – monthly tasks + quarterly tasks (appear in month after quarter end)
+const RULES_QRMP = [
+  { form:'IFF',     purpose:'Optional Invoice Furnishing',              dueDay: 13,  annual:false, monthly:false, quarterlyMonths:[1,2,4,5,7,8,10,11] },
+  { form:'PMT-06',  purpose:'Monthly Tax Payment',                      dueDay: 25,  annual:false, monthly:false, quarterlyMonths:[1,2,4,5,7,8,10,11] },
+  { form:'GSTR-2B', purpose:'Reconciliation',                           dueDay: 14,  annual:false, monthly:true  },
+  // Quarterly – appear in April, July, October, January
+  { form:'GSTR-1',  purpose:'Quarterly Outward Supplies',               dueDay: 13,  annual:false, monthly:false, quarterlyMonths:[3,6,9,0] },
+  { form:'GSTR-3B', purpose:'Quarterly Return',                         dueDay: 22,  annual:false, monthly:false, quarterlyMonths:[3,6,9,0] },
+  { form:'GSTR-9',  purpose:'Annual Return (if applicable)',            dueDay: null, annual:true, annualMonth:11, annualDay:31 },
+  { form:'GSTR-9C', purpose:'Reconciliation Statement (if applicable)', dueDay: null, annual:true, annualMonth:11, annualDay:31 },
+];
+
+// For Composition – fixed dates
+const RULES_COMPOSITION = [
+  { form:'CMP-08', purpose:'Q1 Tax Payment (Apr–Jun)', dueDay:18, month:6,  annual:false },
+  { form:'CMP-08', purpose:'Q2 Tax Payment (Jul–Sep)', dueDay:18, month:9,  annual:false },
+  { form:'CMP-08', purpose:'Q3 Tax Payment (Oct–Dec)', dueDay:18, month:0,  annual:false, nextYear:true },
+  { form:'CMP-08', purpose:'Q4 Tax Payment (Jan–Mar)', dueDay:18, month:3,  annual:false, nextYear:true },
+  { form:'GSTR-4', purpose:'Annual Return',            dueDay:30, month:3,  annual:false, nextYear:true },
+];
+
+// Get tasks applicable to a given month/year for a given type
+// ── TYPE NORMALIZER ──────────────────────────────────────────
+// Google Sheet may store the full label ("Regular Monthly",
+// "Regular Quarterly (QRMP)", "Composition") OR the short key
+// ("Regular", "QRMP"). This maps any variant → internal key.
+function normalizeType(raw) {
+  if (!raw) return '';
+  const v = raw.toString().trim().toLowerCase();
+  if (v === 'regular' || v === 'regular monthly' || v === 'monthly')
+    return 'Regular';
+  if (v === 'qrmp' || v === 'regular quarterly (qrmp)' || v === 'regular quarterly' || v === 'quarterly')
+    return 'QRMP';
+  if (v === 'composition')
+    return 'Composition';
+  return raw.toString().trim(); // fallback: return as-is
+}
+
+function getTasksForMonth(rawType, month0, year) {
+  const type = normalizeType(rawType);
+  // month0: 0=Jan … 11=Dec
+  const tasks = [];
+
+  if (type === 'Regular') {
+    RULES_REGULAR.forEach(r => {
+      if (r.annual) {
+        if (month0 === 11) tasks.push({ form:r.form, purpose:r.purpose, dueDate: new Date(year, 11, 31) });
+      } else {
+        tasks.push({ form:r.form, purpose:r.purpose, dueDate: new Date(year, month0, r.dueDay) });
+      }
+    });
+  }
+
+  if (type === 'QRMP') {
+    RULES_QRMP.forEach(r => {
+      if (r.annual) {
+        if (month0 === 11) tasks.push({ form:r.form, purpose:r.purpose, dueDate: new Date(year, 11, 31) });
+      } else if (r.monthly) {
+        tasks.push({ form:r.form, purpose:r.purpose, dueDate: new Date(year, month0, r.dueDay) });
+      } else if (r.quarterlyMonths && r.quarterlyMonths.includes(month0)) {
+        tasks.push({ form:r.form, purpose:r.purpose, dueDate: new Date(year, month0, r.dueDay) });
+      }
+    });
+  }
+
+  if (type === 'Composition') {
+    RULES_COMPOSITION.forEach(r => {
+      const targetMonth = r.month;
+      const targetYear  = year;
+      if (targetMonth === month0) {
+        tasks.push({ form:r.form, purpose:r.purpose, dueDate: new Date(targetYear, targetMonth, r.dueDay) });
+      }
+    });
+  }
+
+  return tasks;
+}
+
+function formatDate(d) {
+  if (!d) return '—';
+  return d.toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' });
+}
+function daysLeft(d) {
+  const t = new Date(); t.setHours(0,0,0,0);
+  return Math.round((d - t) / 86400000);
+}
+function urgencyClass(days) {
+  if (days < 0)     return 'urgent';
+  if (days <= 7)    return 'urgent';
+  if (days <= 15)   return 'soon';
+  return 'ok';
+}
+function daysLabel(days) {
+  if (days < 0)   return `Overdue ${Math.abs(days)}d`;
+  if (days === 0) return 'Today!';
+  return `${days}d left`;
+}
+function taskKey(gstNo, month0, year, form, purpose) {
+  return `${gstNo}||${year}||${month0}||${form}||${purpose}`;
+}
+
+// ================================================================
+//  STATE
+// ================================================================
+let allFirms      = [];
+let allTasks      = {};   // key → task object from sheet
+let allEwayBill   = {};   // gstNo → ewayBill object from sheet
+let currentStaff  = null;
+let editingGstNo  = null;
+let ewayEditingGstNo = null;
+let allStaffNames = [];
+let viewMonth     = new Date().getMonth();   // 0-based
+let viewYear      = new Date().getFullYear();
+let currentDueFilter = 'all';
+let dueSearchQuery   = '';
+let extraStaff = new Set();
+let sessionToken = '', currentRole = 'Staff', pendingStaff = null;
+let staffFilter = '';   // '' = all staff, UNASSIGNED, or a staff name
+let taskCtx = [];
+const UNASSIGNED = '__UNASSIGNED__';
+
+// Firm identity: firmId (new) -> gstNo (legacy) -> serial no. Lets firms exist without a GST No.
+function firmKey(f) { return String(f.firmId || f.gstNo || ('SNO-' + (f.sno || ''))).trim(); }
+function findFirm(key) { return allFirms.find(x => firmKey(x) === key); }
+function ewayKey(f) { return firmKey(f).toUpperCase(); }
+function jsArg(v) { return esc(JSON.stringify(String(v == null ? '' : v))); }
+function safeId(s) { return String(s).replace(/[^a-z0-9]/gi, '_'); }
+function newFirmId() { return 'F' + Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
+function regCtx(c) { taskCtx.push(c); return taskCtx.length - 1; }
+
+// ── CHANGE LOG HELPERS ──
+const FIRM_FIELDS = [['firmName','Firm Name'],['type','GST Type'],['frequency','Frequency'],['authPerson','Authorised Person'],['gstNo','GST Number'],['username','Username'],['password','Password'],['mail','Email'],['mobile','Mobile'],['staff','Assigned Staff']];
+const EWAY_FIELDS = [['ewbUsername','EWB Username'],['ewbPassword','EWB Password'],['ewbMobile','Registered Mobile'],['ewbEmail','Registered Email'],['notes','Notes']];
+function editor() { return currentStaff || ''; }
+function logStamp() { return new Date().toLocaleString('en-IN', { hour12:false }); }
+function logEntry(action, module, ctx, detail, field, oldV, newV) {
+  return { timestamp: logStamp(), isoTime: new Date().toISOString(), editedBy: editor(), action, module,
+    firmKey: ctx.key || '', firmName: ctx.firmName || '', gstNo: ctx.gstNo || '', detail: detail || '', field, oldValue: oldV, newValue: newV };
+}
+function buildLog(action, module, ctx, fields, oldObj, newObj, detail) {
+  const out = [];
+  fields.forEach(([k, label]) => {
+    const o = String(oldObj && oldObj[k] != null ? oldObj[k] : '').trim();
+    const n = String(newObj && newObj[k] != null ? newObj[k] : '').trim();
+    if (o !== n) out.push(logEntry(action, module, ctx, detail, label, o, n));
+  });
+  return out;
+}
+function bulkLog(tasks) {
+  const by = {};
+  tasks.forEach(t => { (by[t.firmKey] = by[t.firmKey] || { n:0, t }).n++; });
+  return Object.values(by).map(o => logEntry('BULK_TASKS','Task',{key:o.t.firmKey,firmName:o.t.firmName,gstNo:o.t.gstNo},'Financial-year task generation','Tasks generated','',o.n+' tasks'));
+}
+
+// ================================================================
+//  BOOT
+// ================================================================
+window.addEventListener('load', async () => {
+  animateLoadBar();
+  await initStaffScreen();
+});
+
+function animateLoadBar() {
+  const bar = document.getElementById('loadBar');
+  let w = 0;
+  const iv = setInterval(() => {
+    w = Math.min(w + Math.random() * 8, 85);
+    bar.style.width = w + '%';
+    if (w >= 85) clearInterval(iv);
+  }, 120);
+}
+
+async function initStaffScreen() {
+  setLoadStatus('Connecting to Google Sheet…');
+  try {
+    const names = await apiGet({ action: 'getStaffNames' });
+    if (names.error) throw new Error(names.error);
+    allStaffNames = Array.isArray(names) ? names : [];
+    document.getElementById('loadBar').style.width = '100%';
+    setTimeout(showStaffScreen, 400);
+  } catch (err) {
+    setLoadStatus('⚠ ' + err.message);
+    document.getElementById('loadBar').style.background = '#C0392B';
+    setTimeout(() => {
+      showStaffScreen();
+      document.getElementById('staffError').textContent = 'Could not load staff list: ' + err.message;
+    }, 1200);
+  }
+}
+
+// Loads this staff member's data (the server only returns firms they may see)
+async function loadAllData() {
+  const [firmsData, tasksData, ewayData] = await Promise.all([
+    apiGet({ action: 'getAll' }),
+    softGet({ action: 'getTasks' }),
+    softGet({ action: 'getEwayBill' })
+  ]);
+  if (firmsData.error) throw new Error(firmsData.error);
+  allFirms = Array.isArray(firmsData) ? firmsData : [];
+  indexTasks(Array.isArray(tasksData) ? tasksData : []);
+  indexEwayBill(Array.isArray(ewayData) ? ewayData : []);
+  populateStaffDropdown();
+}
+
+function openLogin(name) {
+  pendingStaff = name;
+  document.getElementById('loginTitle').textContent = '🔐 ' + name;
+  document.getElementById('login_password').value = '';
+  document.getElementById('loginError').textContent = '';
+  openModal('loginModal');
+  setTimeout(() => document.getElementById('login_password').focus(), 60);
+}
+
+async function submitLogin(ev) {
+  ev.preventDefault();
+  const pw = document.getElementById('login_password').value;
+  const btn = document.getElementById('loginBtn'), errEl = document.getElementById('loginError');
+  btn.disabled = true; btn.textContent = 'Checking…'; errEl.textContent = '';
+  let r;
+  try {
+    r = await apiPost({ action: 'staffLogin', name: pendingStaff, password: pw });
+    if (r.error) throw new Error(r.error);
+  } catch (err) {
+    errEl.textContent = err.message;
+    btn.disabled = false; btn.textContent = '🔓 Log in';
+    return;
+  }
+  sessionToken = r.token; currentRole = r.role || 'Staff';
+  document.getElementById('login_password').value = '';
+  closeModal('loginModal');
+  const ls = document.getElementById('loadingScreen');
+  ls.classList.remove('hidden');
+  document.getElementById('loadBar').style.background = '';
+  document.getElementById('loadBar').style.width = '60%';
+  setLoadStatus('Loading your clients…');
+  try {
+    await loadAllData();
+    document.getElementById('loadBar').style.width = '100%';
+    enterApp(r.name);
+    ls.classList.add('hidden');
+  } catch (err) { forceLogout('Could not load data: ' + err.message); }
+  btn.disabled = false; btn.textContent = '🔓 Log in';
+}
+
+function forceLogout(msg) {
+  sessionToken = ''; currentStaff = null; currentRole = 'Staff';
+  allFirms = []; allTasks = {}; allEwayBill = {};
+  document.querySelectorAll('.modal-overlay').forEach(o => o.classList.remove('open'));
+  showStaffScreen();
+  document.getElementById('staffError').textContent = msg === undefined ? 'Session expired – please log in again.' : msg;
+}
+
+function indexTasks(rows) {
+  allTasks = {};
+  rows.forEach(t => {
+    const k = taskKey(t.firmKey||t.gstNo, parseInt(t.month), parseInt(t.year), t.form, t.purpose);
+    allTasks[k] = t;
+  });
+}
+
+function indexEwayBill(rows) {
+  allEwayBill = {};
+  rows.forEach(e => { allEwayBill[String(e.firmKey||e.gstNo||'').trim().toUpperCase()] = e; });
+}
+
+function setLoadStatus(msg) { document.getElementById('loadStatus').textContent = msg; }
+
+// ================================================================
+//  STAFF
+// ================================================================
+function buildStaffNames() { populateStaffDropdown(); }
+
+function populateStaffDropdown() {
+  const sel = document.getElementById('f_staff');
+  sel.innerHTML = '<option value="">Select Staff</option>';
+  allStaffNames.forEach(name => {
+    const opt = document.createElement('option');
+    opt.value = name; opt.textContent = name;
+    sel.appendChild(opt);
+  });
+}
+
+function showStaffScreen() {
+  document.getElementById('loadingScreen').classList.add('hidden');
+  document.getElementById('appNav').classList.remove('visible');
+  document.getElementById('mainApp').classList.remove('visible');
+  document.getElementById('staffScreen').classList.add('visible');
+  renderStaffCards();
+}
+
+function renderStaffCards() {
+  const grid = document.getElementById('staffGrid');
+  grid.innerHTML = '';
+  if (!allStaffNames.length) {
+    grid.innerHTML = '<p style="color:rgba(255,255,255,.5);text-align:center;grid-column:1/-1;">No staff accounts found. Add staff in the "Staff" sheet.</p>';
+    return;
+  }
+  allStaffNames.forEach(name => {
+    const initials = name.trim().split(/\s+/).map(w => w[0]).join('').toUpperCase().slice(0, 2) || '?';
+    const card = document.createElement('div');
+    card.className = 'staff-card';
+    card.innerHTML = '<div class="staff-avatar"></div><div class="staff-name"></div><div class="staff-count"></div>';
+    card.children[0].textContent = initials;
+    card.children[1].textContent = name;
+    card.children[2].textContent = 'Tap to log in';
+    card.onclick = () => openLogin(name);
+    grid.appendChild(card);
+  });
+}
+
+function enterApp(name) {
+  currentStaff = name;
+  const disp = name;
+  document.getElementById('staffNameDisplay').textContent = disp;
+  document.getElementById('staffScreen').classList.remove('visible');
+  document.getElementById('appNav').classList.add('visible');
+  document.getElementById('mainApp').classList.add('visible');
+  staffFilter = '';
+  populateStaffFilter();
+  const myFirms = getMyFirms();
+  renderFirmTable(myFirms);
+  updateMonthLabel();
+  switchTab('firms');
+  showToast(`👋 Welcome, ${disp}! ${myFirms.length} client${myFirms.length!==1?'s':''} in the portal.`);
+}
+
+async function switchStaff() {
+  try { await apiPost({ action: 'logout' }); } catch (e) {}
+  forceLogout('');
+}
+
+// Everyone can see every firm; staffFilter only narrows the view.
+function getMyFirms() {
+  if (!currentStaff) return [];
+  if (!staffFilter) return allFirms;
+  const blank = f => !(f.staff || '').toString().trim();
+  if (staffFilter === UNASSIGNED) return allFirms.filter(blank);
+  const t = staffFilter.toLowerCase();
+  return allFirms.filter(f => (f.staff || '').toString().trim().toLowerCase() === t);
+}
+function populateStaffFilter() {
+  const sel = document.getElementById('staffFilter');
+  const names = new Set(allStaffNames);
+  allFirms.forEach(f => { const n = (f.staff || '').toString().trim(); if (n) names.add(n); });
+  sel.innerHTML = '';
+  const add = (v, t) => { const o = document.createElement('option'); o.value = v; o.textContent = t; sel.appendChild(o); };
+  add('', `All staff (${allFirms.length} firms)`);
+  [...names].sort().forEach(n => add(n, n + (n === currentStaff ? ' (me)' : '')));
+  add(UNASSIGNED, 'Unassigned');
+  sel.value = staffFilter;
+}
+function onStaffFilterChange() {
+  staffFilter = document.getElementById('staffFilter').value;
+  switchTab(document.querySelector('.tab-btn.active').id.replace('tab-', ''));
+}
+
+// ── TABS ──
+function switchTab(tab) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+  document.getElementById('firmsTab').style.display = tab === 'firms' ? 'block' : 'none';
+  document.getElementById('dueModule').classList.toggle('visible', tab === 'due');
+  document.getElementById('ewayModule').classList.toggle('visible', tab === 'eway');
+  document.getElementById('statusModule').classList.toggle('visible', tab === 'status');
+  document.getElementById('staffFilterBar').style.display = tab === 'status' ? 'none' : 'flex';
+  if (tab === 'due') renderDueModule();
+  else if (tab === 'eway') filterEwayTable();
+  else if (tab === 'status') renderStaffStatus();
+  else filterFirms();
+}
+
+// ── FIRM TABLE ──
+function renderFirmTable(firms) {
+  const tbody = document.getElementById('firmTbody');
+  const empty = document.getElementById('emptyState');
+  tbody.innerHTML = '';
+  if (!firms.length) { empty.style.display='block'; return; }
+  empty.style.display = 'none';
+  const typeLabel = { Regular:'Regular Monthly', QRMP:'Regular Quarterly (QRMP)', Composition:'Composition' };
+  firms.forEach((f, i) => {
+    const normType = normalizeType(f.type);
+    const typeCls  = normType.toLowerCase().replace(/[^a-z]/g,'');
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${f.sno||(i+1)}</td>
+      <td><strong>${esc(f.firmName)}</strong></td>
+      <td><span class="type-badge type-${typeCls}">${typeLabel[normType]||esc(f.type)}</span></td>
+      <td><span class="freq-badge">${esc(f.frequency)}</span></td>
+      <td>${esc(f.authPerson)}</td>
+      <td><code style="font-size:11.5px">${esc(f.gstNo)}</code></td>
+      <td>${esc(f.username)}</td>
+      <td><span class="pw-plain">${esc(f.password)}</span></td>
+      <td>${f.mail?`<a href="mailto:${esc(f.mail)}" style="color:var(--teal);text-decoration:none;">${esc(f.mail)}</a>`:'—'}</td>
+      <td>${esc(f.mobile)}</td>
+      <td>
+        <div class="action-btns">
+          <button class="btn-edit" onclick="openEditModal(${jsArg(firmKey(f))})">✏ Edit</button>
+          <button class="btn-view-due" onclick="openDetailModal(${jsArg(firmKey(f))})">📅 Details</button>
+          <button class="btn-login" onclick="gstLogin(${jsArg(firmKey(f))})" title="Open GST portal and type this firm's login">🔐 Login</button>
+        </div>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function esc(v) {
+  if (v===null||v===undefined) return '—';
+  return String(v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function filterFirms() {
+  const q = document.getElementById('searchInput').value.toLowerCase().trim();
+  const base = getMyFirms();
+  if (!q) { renderFirmTable(base); return; }
+  renderFirmTable(base.filter(f =>
+    (f.firmName||'').toLowerCase().includes(q) ||
+    (f.authPerson||'').toLowerCase().includes(q) ||
+    (f.gstNo||'').toLowerCase().includes(q)
+  ));
+}
+
+// ================================================================
+//  DETAIL MODAL
+// ================================================================
+function openDetailModal(gstNo) {
+  const f = findFirm(gstNo);
+  if (!f) return;
+  const normType  = normalizeType(f.type);
+  const typeLabel = { Regular:'Regular Monthly', QRMP:'Regular Quarterly (QRMP)', Composition:'Composition' };
+  const typeDisplay = typeLabel[normType] || (f.type||'');
+
+  document.getElementById('detailModalTitle').textContent = f.firmName||'Firm Details';
+  const fields = [
+    ['Firm Name',f.firmName],['GST Type', typeDisplay],['Frequency',f.frequency],
+    ['Auth. Person',f.authPerson],['GST No',f.gstNo],['Username',f.username],
+    ['Email',f.mail],['Mobile',f.mobile],['Assigned Staff',f.staff]
+  ];
+  const grid = document.getElementById('detailGrid');
+  grid.innerHTML = '';
+  fields.forEach(([label,val]) => {
+    if (!val||val==='—') return;
+    const div = document.createElement('div');
+    div.className = 'detail-card';
+    const display = label==='Email' ? `<a href="mailto:${esc(val)}" style="color:var(--teal)">${esc(val)}</a>` : esc(val);
+    div.innerHTML = `<div class="detail-label">${label}</div><div class="detail-value">${display}</div>`;
+    grid.appendChild(div);
+  });
+  const pwCard = document.createElement('div');
+  pwCard.className = 'detail-card';
+  pwCard.innerHTML = `<div class="detail-label">Password</div><div class="detail-value" style="font-family:monospace;color:var(--teal);letter-spacing:.5px;">${esc(f.password)||'(not set)'}</div>`;
+  grid.appendChild(pwCard);
+
+  const tasks = getTasksForMonth(f.type, viewMonth, viewYear);
+  const dueSection = document.getElementById('firmDueDates');
+  dueSection.innerHTML = '';
+  if (tasks.length) {
+    dueSection.innerHTML = `<div class="due-dates-title">📅 ${MONTH_NAMES[viewMonth]} ${viewYear} – ${typeDisplay}</div>`;
+    const tbl = document.createElement('table');
+    tbl.className = 'due-table';
+    tbl.innerHTML = '<thead><tr><th>Form</th><th>Purpose</th><th>Due Date</th><th>Days</th><th>Status</th></tr></thead>';
+    const tb = document.createElement('tbody');
+    tasks.forEach(t => {
+      const days = daysLeft(t.dueDate); const urg = urgencyClass(days);
+      const k = taskKey(firmKey(f), viewMonth, viewYear, t.form, t.purpose);
+      const saved = allTasks[k];
+      const status = saved ? saved.status : 'Pending';
+      const tr2 = document.createElement('tr');
+      tr2.innerHTML = `
+        <td><code style="font-weight:700">${t.form}</code></td>
+        <td>${t.purpose}</td>
+        <td><strong>${formatDate(t.dueDate)}</strong></td>
+        <td><span class="item-days days-${urg}">${daysLabel(days)}</span></td>
+        <td><span class="task-status-badge ${status==='Done'?'status-done':'status-pending'}">${status}</span></td>`;
+      tb.appendChild(tr2);
+    });
+    tbl.appendChild(tb);
+    dueSection.appendChild(tbl);
+  }
+  document.getElementById('detailModal').classList.add('open');
+}
+
+// ================================================================
+//  ADD / EDIT MODAL
+// ================================================================
+function openAddModal() {
+  editingGstNo = null;
+  document.getElementById('editModalTitle').textContent = '➕ Add New Firm';
+  document.getElementById('firmForm').reset();
+  document.getElementById('f_staff').value = (currentStaff && currentStaff !== UNASSIGNED) ? currentStaff : '';
+  document.getElementById('editModal').classList.add('open');
+}
+function openEditModal(gstNo) {
+  const f = findFirm(gstNo);
+  if (!f) return;
+  editingGstNo = gstNo;
+  document.getElementById('editModalTitle').textContent = '✏ Edit Firm';
+  document.getElementById('f_firmName').value  = f.firmName  ||'';
+  // Normalize type from sheet → dropdown option value (Regular / QRMP / Composition)
+  document.getElementById('f_type').value       = normalizeType(f.type);
+  document.getElementById('f_frequency').value  = f.frequency ||'';
+  document.getElementById('f_authPerson').value = f.authPerson||'';
+  document.getElementById('f_gstNo').value      = f.gstNo     ||'';
+  document.getElementById('f_username').value   = f.username  ||'';
+  document.getElementById('f_password').value   = f.password  ||'';
+  document.getElementById('f_mail').value       = f.mail      ||'';
+  document.getElementById('f_mobile').value     = f.mobile    ||'';
+  const sSel = document.getElementById('f_staff');
+  if (f.staff && ![...sSel.options].some(o => o.value === f.staff)) { const o = document.createElement('option'); o.value = o.textContent = f.staff; sSel.appendChild(o); }
+  sSel.value = f.staff || '';
+  document.getElementById('editModal').classList.add('open');
+}
+function updateFrequency() {
+  const map = { Regular:'Monthly', QRMP:'Quarterly', Composition:'Quarterly' };
+  const v = document.getElementById('f_type').value;
+  if (map[v]) document.getElementById('f_frequency').value = map[v];
+}
+async function saveFirm(e) {
+  e.preventDefault();
+  const g = id => document.getElementById(id).value.trim();
+  const row = {
+    firmName: g('f_firmName'), type: g('f_type'), frequency: g('f_frequency'),
+    authPerson: g('f_authPerson'), gstNo: g('f_gstNo').toUpperCase(),
+    username: g('f_username'), password: g('f_password'), mail: g('f_mail'),
+    mobile: g('f_mobile'), staff: g('f_staff') === '__NEW__' ? '' : g('f_staff')
+  };
+  const isEdit = !!editingGstNo;               // holds the firm key while editing
+  const ex = isEdit ? findFirm(editingGstNo) : null;
+  if (isEdit && !ex) { showToast('❌ Firm not found – please refresh.'); return; }
+  const dup = row.gstNo && allFirms.find(x => x.gstNo === row.gstNo && x !== ex);
+  if (dup && !confirm(`GST No ${row.gstNo} already exists for "${dup.firmName || 'another firm'}". Save anyway?`)) return;
+
+  let logs, payload;
+  if (isEdit) {
+    logs = buildLog('EDIT','Firm',{key:editingGstNo,firmName:row.firmName,gstNo:row.gstNo},FIRM_FIELDS,ex,row,'');
+    if (!logs.length) { closeModal('editModal'); showToast('ℹ️ No changes to save.'); return; }
+    payload = { action:'edit', row:{ ...row, sno:ex.sno||'', firmId:ex.firmId||'', firmKey:editingGstNo, gstNo:ex.gstNo||'', newGstNo:row.gstNo }, log:logs };
+  } else {
+    row.firmId = newFirmId();
+    row.sno = allFirms.reduce((m,x) => Math.max(m, parseInt(x.sno)||0), 0) + 1;
+    const ctx = { key:row.firmId, firmName:row.firmName, gstNo:row.gstNo };
+    logs = [logEntry('ADD','Firm',ctx,'New firm added','Record','','Created')]
+      .concat(buildLog('ADD','Firm',ctx,FIRM_FIELDS,{},row,'New firm added'));
+    payload = { action:'add', row:{ ...row, firmKey:row.firmId }, log:logs };
+  }
+
+  const btn = document.getElementById('saveBtn');
+  btn.textContent = 'Saving…'; btn.disabled = true;
+  try {
+    const result = await apiPost(payload);
+    if (result.error) throw new Error(result.error);
+    if (isEdit) {
+      Object.assign(ex, row);
+      if (firmKey(ex) !== editingGstNo) showToast('ℹ️ GST No changed – tap Refresh to resync tasks & E-Way data.');
+    } else {
+      if (result.sno) row.sno = result.sno;
+      allFirms.push(row);
+    }
+    buildStaffNames();
+    closeModal('editModal');
+    populateStaffFilter();
+    filterFirms();
+    if (!isEdit) {
+      showToast('✅ Firm added! Auto-generating tasks for the whole year…');
+      await autoGenerateYearTasks(row);
+    } else {
+      showToast('✅ Firm updated!');
+    }
+  } catch(err) { showToast('❌ ' + err.message); }
+  btn.textContent = '💾 Save Firm'; btn.disabled = false;
+}
+
+// Auto-generate tasks for the whole financial year (Apr–Mar) when a firm is added.
+async function autoGenerateYearTasks(firm) {
+  const today     = new Date();
+  const curYear   = today.getFullYear();
+  const curMonth  = today.getMonth(); // 0-based
+
+  // Indian Financial Year: Apr (3) to Mar (2) of next year
+  // Determine FY start year
+  const fyStartYear = curMonth >= 3 ? curYear : curYear - 1;
+
+  const toSave = [];
+
+  // Iterate all 12 months of the financial year
+  for (let m = 0; m < 12; m++) {
+    const month0 = (3 + m) % 12;          // 3=Apr … 2=Mar
+    const year   = month0 >= 3 ? fyStartYear : fyStartYear + 1;
+
+    const tasks = getTasksForMonth(firm.type, month0, year);
+    tasks.forEach(t => {
+      const k = taskKey(firmKey(firm), month0, year, t.form, t.purpose);
+      if (!allTasks[k]) {
+        toSave.push({
+          gstNo: firm.gstNo, firmKey: firmKey(firm),
+          firmName:    firm.firmName,
+          month:       month0,
+          year:        year,
+          form:        t.form,
+          purpose:     t.purpose,
+          dueDate:     formatDate(t.dueDate),
+          status:      'Pending',
+          completedBy: '',
+          completedOn: '',
+          notes:       ''
+        });
+      }
+    });
+  }
+
+  if (!toSave.length) {
+    showToast('ℹ️ No new tasks to generate (all already exist).');
+    return;
+  }
+
+  try {
+    const result = await apiPost({ action: 'saveBulkTasks', tasks: toSave, log: bulkLog(toSave) });
+    if (result.error) throw new Error(result.error);
+    toSave.forEach(t => {
+      const k = taskKey(t.firmKey, t.month, t.year, t.form, t.purpose);
+      allTasks[k] = t;
+    });
+    showToast(`✅ ${toSave.length} tasks auto-generated for the whole financial year!`);
+    if (document.getElementById('dueModule').classList.contains('visible')) {
+      renderDueModule();
+    }
+  } catch(err) {
+    showToast('⚠️ Firm saved but task generation failed: ' + err.message);
+  }
+}
+
+// ================================================================
+//  DUE DATES / MONTHLY TASKS MODULE
+// ================================================================
+function updateMonthLabel() {
+  document.getElementById('monthLabel').textContent = `${MONTH_NAMES[viewMonth]} ${viewYear}`;
+  document.getElementById('statusMonthLabel').textContent = `${MONTH_NAMES[viewMonth]} ${viewYear}`;
+}
+
+function changeMonth(dir) {
+  viewMonth += dir;
+  if (viewMonth > 11) { viewMonth=0; viewYear++; }
+  if (viewMonth < 0)  { viewMonth=11; viewYear--; }
+  updateMonthLabel();
+  if (document.getElementById('statusModule').classList.contains('visible')) renderStaffStatus(); else renderDueModule();
+}
+
+function filterDue(type, el) {
+  currentDueFilter = type;
+  document.querySelectorAll('.filter-chip').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');
+  renderDueModule();
+}
+
+function filterDueSearch() {
+  dueSearchQuery = document.getElementById('dueSearchInput').value.trim();
+  const clearBtn = document.getElementById('dueSearchClear');
+  clearBtn.classList.toggle('visible', dueSearchQuery.length > 0);
+  renderDueModule();
+}
+
+function clearDueSearch() {
+  dueSearchQuery = '';
+  document.getElementById('dueSearchInput').value = '';
+  document.getElementById('dueSearchClear').classList.remove('visible');
+  renderDueModule();
+}
+
+function renderDueModule() {
+  updateMonthLabel();
+  const allMyFirms = getMyFirms();
+
+  // Apply type filter
+  let firms = currentDueFilter === 'all'
+    ? allMyFirms
+    : allMyFirms.filter(f => normalizeType(f.type) === currentDueFilter);
+
+  // Apply search filter
+  const q = dueSearchQuery.toLowerCase();
+  if (q) {
+    firms = firms.filter(f =>
+      (f.firmName  || '').toLowerCase().includes(q) ||
+      (f.authPerson|| '').toLowerCase().includes(q)
+    );
+  }
+
+  renderSummary(allMyFirms, viewMonth, viewYear);
+
+  // Show result count when searching
+  const existingCount = document.getElementById('dueResultCount');
+  if (existingCount) existingCount.remove();
+  if (q) {
+    const countEl = document.createElement('div');
+    countEl.id = 'dueResultCount';
+    countEl.className = 'due-search-count';
+    countEl.innerHTML = `Showing <strong>${firms.length}</strong> of ${allMyFirms.length} firm${allMyFirms.length !== 1 ? 's' : ''}`;
+    document.getElementById('tasksWrap').before(countEl);
+  }
+
+  renderTaskGrid(firms, viewMonth, viewYear);
+}
+
+// ── SUMMARY CARDS ─────────────────────────────────────────
+function renderSummary(firms, month0, year) {
+  let totalTasks=0, done=0, overdue=0, urgent=0;
+  firms.forEach(f => {
+    const tasks = getTasksForMonth(f.type, month0, year);
+    tasks.forEach(t => {
+      totalTasks++;
+      const k = taskKey(firmKey(f), month0, year, t.form, t.purpose);
+      const saved = allTasks[k];
+      if (saved && saved.status==='Done') { done++; return; }
+      const days = daysLeft(t.dueDate);
+      if (days < 0) overdue++;
+      else if (days <= 7) urgent++;
+    });
+  });
+  const pct = totalTasks ? Math.round(done/totalTasks*100) : 0;
+  document.getElementById('summaryRow').innerHTML = `
+    <div class="summary-card danger">
+      <div class="summary-num">${overdue}</div>
+      <div class="summary-label">Overdue Tasks</div>
+    </div>
+    <div class="summary-card warn">
+      <div class="summary-num">${urgent}</div>
+      <div class="summary-label">Due within 7 days</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num">${done}/${totalTasks}</div>
+      <div class="summary-label">Tasks Completed</div>
+      <div class="progress-bar-wrap" style="margin-top:8px;">
+        <div class="progress-bar" style="width:${pct}%"></div>
+      </div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-num">${firms.length}</div>
+      <div class="summary-label">Firms This View</div>
+    </div>
+  `;
+}
+
+// ── TASK GRID ─────────────────────────────────────────────
+function renderTaskGrid(firms, month0, year) {
+  const wrap = document.getElementById('tasksWrap');
+  taskCtx = [];
+  wrap.innerHTML = '';
+  if (!firms.length) {
+    wrap.innerHTML = '<div class="empty-state"><div class="empty-icon">📋</div><p>No firms to display.</p></div>';
+    return;
+  }
+
+  // Sort firms: those with pending/overdue tasks first
+  const scored = firms.map(f => {
+    const tasks = getTasksForMonth(f.type, month0, year);
+    const pendingOverdue = tasks.filter(t => {
+      const k = taskKey(firmKey(f), month0, year, t.form, t.purpose);
+      const saved = allTasks[k];
+      if (saved && saved.status==='Done') return false;
+      return daysLeft(t.dueDate) <= 7;
+    }).length;
+    return { f, tasks, pendingOverdue };
+  });
+  scored.sort((a,b) => b.pendingOverdue - a.pendingOverdue);
+
+  const grid = document.createElement('div');
+  grid.className = 'task-overview-grid';
+
+  scored.forEach(({ f, tasks }) => {
+    if (!tasks.length) return;
+    const uid = 'tf_' + Math.random().toString(36).slice(2);
+
+    const doneCount    = tasks.filter(t => { const k=taskKey(firmKey(f),month0,year,t.form,t.purpose); return allTasks[k]&&allTasks[k].status==='Done'; }).length;
+    const totalCount   = tasks.length;
+    const pct          = Math.round(doneCount/totalCount*100);
+    const allDone      = doneCount===totalCount;
+
+    const typeLabel = { Regular:'Regular Monthly', QRMP:'Reg. Quarterly (QRMP)', Composition:'Composition' };
+    const normType  = normalizeType(f.type);
+    const typeCls   = normType.toLowerCase().replace(/[^a-z]/g,'');
+
+    const block = document.createElement('div');
+    block.className = 'task-firm-block';
+    block.id = 'block_' + safeId(firmKey(f));
+    block.innerHTML = `
+      <div class="task-firm-head" onclick="toggleTaskBlock('${uid}')">
+        <span class="task-firm-head-name">${esc(f.firmName)}</span>
+        <div class="task-firm-head-meta">
+          <span class="meta-pill" style="font-size:10px;">${typeLabel[normType]||esc(f.type)}</span>
+          <span class="meta-pill" style="font-size:10px;background:${allDone?'rgba(30,122,75,.4)':'rgba(192,57,43,.3)'};">
+            ${doneCount}/${totalCount} ${allDone?'✓':''}
+          </span>
+        </div>
+        <span class="task-collapse" id="tc_${uid}">▼</span>
+      </div>
+      <div class="progress-bar-wrap" style="height:3px;border-radius:0;">
+        <div class="progress-bar" style="width:${pct}%;border-radius:0;"></div>
+      </div>
+      <div class="task-firm-body open" id="${uid}"></div>
+    `;
+
+    const body = block.querySelector('#'+uid);
+
+    tasks.forEach((t, ti) => {
+      const k    = taskKey(firmKey(f), month0, year, t.form, t.purpose);
+      const saved = allTasks[k];
+      const isDone = saved && saved.status==='Done';
+      const days = daysLeft(t.dueDate);
+      const urg  = isDone ? 'ok' : urgencyClass(days);
+      const noteId = `note_${uid}_${ti}`;
+      const rowId  = `row_${uid}_${ti}`;
+      const chkId  = `chk_${uid}_${ti}`;
+      const ctxId  = regCtx({ key: firmKey(f), month0, year, form: t.form, purpose: t.purpose, rowId });
+
+      const taskRow = document.createElement('div');
+      taskRow.innerHTML = `
+        <div class="task-row" id="${rowId}" style="${isDone?'opacity:.6;':''}">
+          <input type="checkbox" class="task-check" id="${chkId}"
+            ${isDone?'checked':''}
+            onchange="toggleTaskStatus(this,${ctxId})">
+          <span class="task-form">${t.form}</span>
+          <span class="task-purpose">${t.purpose}</span>
+          <span class="task-due">${formatDate(t.dueDate)}</span>
+          <span class="task-status-badge ${isDone?'status-done':days<0?'status-pending':days<=15?'status-soon':'status-done'}" style="${isDone?'':''}">
+            ${isDone ? 'Done' : daysLabel(days)}
+          </span>
+          <button class="task-note-btn" onclick="toggleNote('${noteId}')" title="Add note">📝</button>
+        </div>
+        <div class="task-note-row" id="${noteId}">
+          <input class="task-note-input" type="text" placeholder="Add a note…"
+            value="${saved&&saved.notes ? esc(saved.notes) : ''}">
+          <button class="task-note-save"
+            onclick="saveNote(${ctxId},'${noteId}')">
+            Save
+          </button>
+        </div>
+      `;
+      body.appendChild(taskRow);
+    });
+
+    grid.appendChild(block);
+  });
+
+  wrap.appendChild(grid);
+  if (!grid.children.length) wrap.innerHTML = '<div class="empty-state"><div class="empty-icon">📋</div><p>No tasks fall in this month for the selected firms.</p></div>';
+}
+
+function toggleTaskBlock(uid) {
+  const body = document.getElementById(uid);
+  const icon = document.getElementById('tc_'+uid);
+  body.classList.toggle('open');
+  icon.classList.toggle('open');
+}
+
+// ── TOGGLE TASK STATUS (Pending ↔ Done) ─────────────────
+async function toggleTaskStatus(chkEl, id) {
+  const c = taskCtx[id]; if (!c) return;
+  const f = findFirm(c.key) || {};
+  const isDone = chkEl.checked;
+  const k = taskKey(c.key, c.month0, c.year, c.form, c.purpose);
+  const prev = allTasks[k] || {};
+  const taskData = {
+    firmKey: c.key, gstNo: f.gstNo || '', firmName: f.firmName || '',
+    month: c.month0, year: c.year, form: c.form, purpose: c.purpose,
+    status: isDone ? 'Done' : 'Pending',
+    completedBy: isDone ? editor() : '',
+    completedOn: isDone ? new Date().toLocaleDateString('en-IN') : '',
+    notes: prev.notes || ''
+  };
+  const log = [logEntry('STATUS','Task',{key:c.key,firmName:f.firmName,gstNo:f.gstNo},`${c.form} – ${MONTH_NAMES[c.month0]} ${c.year}`,'Status',prev.status||'Pending',taskData.status)];
+  chkEl.disabled = true;
+  try {
+    const result = await apiPost({ action: 'saveTask', task: taskData, log });
+    if (result.error) throw new Error(result.error);
+    allTasks[k] = taskData;
+    const row = document.getElementById(c.rowId);
+    row.style.opacity = isDone ? '.6' : '1';
+    const badge = row.querySelector('.task-status-badge');
+    if (badge) {
+      badge.className = `task-status-badge ${isDone ? 'status-done' : 'status-pending'}`;
+      badge.textContent = isDone ? 'Done' : 'Pending';
+    }
+    renderSummary(getMyFirms(), viewMonth, viewYear);
+    updateBlockProgress(c.key, c.month0, c.year);
+    showToast(isDone ? `✅ ${c.form} marked Done for ${f.firmName||'firm'}` : `↩ ${c.form} marked Pending`);
+  } catch(err) {
+    chkEl.checked = !isDone;
+    showToast('❌ ' + err.message);
+  }
+  chkEl.disabled = false;
+}
+
+function updateBlockProgress(key, month0, year) {
+  const f = findFirm(key);
+  if (!f) return;
+  const tasks = getTasksForMonth(f.type, month0, year);
+  const doneC = tasks.filter(t => { const k = taskKey(key,month0,year,t.form,t.purpose); return allTasks[k] && allTasks[k].status==='Done'; }).length;
+  const pct   = tasks.length ? Math.round(doneC/tasks.length*100) : 0;
+  const blockEl = document.getElementById('block_' + safeId(key));
+  if (!blockEl) return;
+  const bar = blockEl.querySelector('.progress-bar');
+  if (bar) bar.style.width = pct + '%';
+  const pill = blockEl.querySelectorAll('.meta-pill')[1];
+  if (pill) {
+    const allDone = doneC === tasks.length;
+    pill.textContent = `${doneC}/${tasks.length} ${allDone?'✓':''}`;
+    pill.style.background = allDone ? 'rgba(30,122,75,.4)' : 'rgba(192,57,43,.3)';
+  }
+}
+
+// ── NOTE HANDLING ──
+function toggleNote(noteId) {
+  const el = document.getElementById(noteId);
+  el.classList.toggle('open');
+  if (el.classList.contains('open')) el.querySelector('input').focus();
+}
+
+async function saveNote(id, noteId) {
+  const c = taskCtx[id]; if (!c) return;
+  const f = findFirm(c.key) || {};
+  const noteEl = document.getElementById(noteId);
+  const notes  = noteEl.querySelector('input').value.trim();
+  const k = taskKey(c.key, c.month0, c.year, c.form, c.purpose);
+  const existing = allTasks[k] || {};
+  if ((existing.notes || '') === notes) { noteEl.classList.remove('open'); showToast('ℹ️ No change in note.'); return; }
+  const taskData = {
+    firmKey: c.key, gstNo: f.gstNo || '', firmName: f.firmName || '',
+    month: c.month0, year: c.year, form: c.form, purpose: c.purpose,
+    status: existing.status || 'Pending', completedBy: existing.completedBy || '', completedOn: existing.completedOn || '', notes
+  };
+  const log = [logEntry('NOTE','Task',{key:c.key,firmName:f.firmName,gstNo:f.gstNo},`${c.form} – ${MONTH_NAMES[c.month0]} ${c.year}`,'Notes',existing.notes||'',notes)];
+  try {
+    const result = await apiPost({ action: 'saveTask', task: taskData, log });
+    if (result.error) throw new Error(result.error);
+    allTasks[k] = taskData;
+    noteEl.classList.remove('open');
+    showToast(`📝 Note saved for ${c.form} – ${f.firmName||'firm'}`);
+  } catch(err) { showToast('❌ ' + err.message); }
+}
+
+// ── GENERATE TASKS FOR THE WHOLE FINANCIAL YEAR (manual fallback) ──
+async function generateMonthTasks() {
+  const btn = document.getElementById('genBtn');
+  btn.disabled = true; btn.textContent = '⏳ Generating…';
+
+  const firms = allFirms;
+  const toSave = [];
+
+  const today        = new Date();
+  const curYear      = today.getFullYear();
+  const curMonth     = today.getMonth(); // 0-based
+  const fyStartYear  = curMonth >= 3 ? curYear : curYear - 1; // Apr = month 3
+
+  firms.forEach(f => {
+    for (let m = 0; m < 12; m++) {
+      const month0 = (3 + m) % 12;           // 3=Apr … 2=Mar
+      const year   = month0 >= 3 ? fyStartYear : fyStartYear + 1;
+
+      const tasks = getTasksForMonth(f.type, month0, year);
+      tasks.forEach(t => {
+        const k = taskKey(firmKey(f), month0, year, t.form, t.purpose);
+        if (!allTasks[k]) {
+          toSave.push({
+            gstNo: f.gstNo, firmKey: firmKey(f),
+            firmName:    f.firmName,
+            month:       month0,
+            year:        year,
+            form:        t.form,
+            purpose:     t.purpose,
+            dueDate:     formatDate(t.dueDate),
+            status:      'Pending',
+            completedBy: '',
+            completedOn: '',
+            notes:       ''
+          });
+        }
+      });
+    }
+  });
+
+  const fyLabel = `FY ${fyStartYear}-${String(fyStartYear + 1).slice(2)}`;
+
+  if (!toSave.length) {
+    showToast(`ℹ️ All tasks already exist for ${fyLabel}.`);
+    btn.disabled = false; btn.textContent = '⚡ Fill Missing Tasks';
+    return;
+  }
+
+  try {
+    const result = await apiPost({ action: 'saveBulkTasks', tasks: toSave, log: bulkLog(toSave) });
+    if (result.error) throw new Error(result.error);
+    toSave.forEach(t => {
+      const k = taskKey(t.firmKey, t.month, t.year, t.form, t.purpose);
+      allTasks[k] = t;
+    });
+    showToast(`✅ ${toSave.length} missing tasks filled for ${fyLabel} (${firms.length} firms)`);
+    renderDueModule();
+  } catch(err) { showToast('❌ ' + err.message); }
+  btn.disabled = false; btn.textContent = '⚡ Fill Missing Tasks';
+}
+
+// ================================================================
+//  E-WAY BILL MODULE
+// ================================================================
+
+// ── SUMMARY STRIP ────────────────────────────────────────────
+function renderEwaySummary(firms) {
+  const total  = firms.length;
+  const hasSet = firms.filter(f => {
+    const e = allEwayBill[ewayKey(f)];
+    return e && e.ewbUsername;
+  }).length;
+  const missing = total - hasSet;
+  document.getElementById('ewaySummary').innerHTML = `
+    <div class="eway-stat">
+      <div class="eway-stat-num">${total}</div>
+      <div class="eway-stat-label">Total Firms</div>
+    </div>
+    <div class="eway-stat">
+      <div class="eway-stat-num" style="color:var(--green)">${hasSet}</div>
+      <div class="eway-stat-label">Credentials Saved</div>
+    </div>
+    <div class="eway-stat warn">
+      <div class="eway-stat-num" style="color:var(--amber)">${missing}</div>
+      <div class="eway-stat-label">Missing Credentials</div>
+    </div>
+  `;
+}
+
+// ── TABLE ────────────────────────────────────────────────────
+function renderEwayTable(firms) {
+  renderEwaySummary(firms);
+  const tbody = document.getElementById('ewayTbody');
+  const empty = document.getElementById('ewayEmpty');
+  tbody.innerHTML = '';
+  if (!firms.length) { empty.style.display='block'; return; }
+  empty.style.display = 'none';
+  firms.forEach((f, i) => {
+    const gstKey = ewayKey(f);
+    const e      = allEwayBill[gstKey] || {};
+    const hasCredentials = !!(e.ewbUsername);
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${f.sno||(i+1)}</td>
+      <td><strong>${esc(f.firmName)}</strong></td>
+      <td><code style="font-size:11.5px">${esc(f.gstNo)}</code></td>
+      <td>${esc(f.authPerson)}</td>
+      <td>${e.ewbUsername ? esc(e.ewbUsername) : '<span style="color:#aaa;font-size:12px;">Not set</span>'}</td>
+      <td>${e.ewbPassword ? `<span class="pw-plain">${esc(e.ewbPassword)}</span>` : '<span style="color:#aaa;font-size:12px;">Not set</span>'}</td>
+      <td>${e.ewbMobile   ? esc(e.ewbMobile)   : '<span style="color:#aaa;font-size:12px;">—</span>'}</td>
+      <td>${e.ewbEmail    ? `<a href="mailto:${esc(e.ewbEmail)}" style="color:var(--teal);text-decoration:none;">${esc(e.ewbEmail)}</a>` : '<span style="color:#aaa;font-size:12px;">—</span>'}</td>
+      <td><span class="${hasCredentials ? 'eway-badge-set' : 'eway-badge-none'}">${hasCredentials ? '✓ Set' : '✗ Missing'}</span></td>
+      <td>
+        <button class="btn-eway" onclick="openEwayModal(${jsArg(firmKey(f))})">
+          ${hasCredentials ? '✏ Edit' : '＋ Add'}
+        </button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function filterEwayTable() {
+  const q = document.getElementById('ewaySearch').value.toLowerCase().trim();
+  const base = getMyFirms();
+  if (!q) { renderEwayTable(base); return; }
+  renderEwayTable(base.filter(f =>
+    (f.firmName  ||'').toLowerCase().includes(q) ||
+    (f.gstNo     ||'').toLowerCase().includes(q) ||
+    (f.authPerson||'').toLowerCase().includes(q)
+  ));
+}
+
+// ── MODAL OPEN / SAVE ────────────────────────────────────────
+function openEwayModal(gstNo) {
+  const f = findFirm(gstNo);
+  if (!f) return;
+  ewayEditingGstNo = gstNo;
+
+  // Populate read-only firm info banner
+  document.getElementById('ewayFirmInfo').innerHTML = `
+    <div><span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--slate);">Firm</span>
+      <div style="font-size:14px;font-weight:600;color:var(--navy);margin-top:2px;">${esc(f.firmName)}</div></div>
+    <div><span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--slate);">GST No</span>
+      <div style="font-size:13px;font-family:monospace;color:var(--teal);margin-top:2px;">${esc(f.gstNo)}</div></div>
+    <div><span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--slate);">Auth. Person</span>
+      <div style="font-size:13px;color:var(--navy);margin-top:2px;">${esc(f.authPerson)}</div></div>
+  `;
+
+  document.getElementById('ewayModalTitle').textContent = '🚚 E-Way Bill – ' + f.firmName;
+
+  // Pre-fill existing credentials
+  const e = allEwayBill[String(gstNo).toUpperCase()] || {};
+  document.getElementById('ew_username').value = e.ewbUsername || '';
+  document.getElementById('ew_password').value = e.ewbPassword || '';
+  document.getElementById('ew_mobile').value   = e.ewbMobile   || '';
+  document.getElementById('ew_email').value    = e.ewbEmail    || '';
+  document.getElementById('ew_notes').value    = e.notes       || '';
+
+  document.getElementById('ewayModal').classList.add('open');
+}
+
+async function saveEwayCredentials(event) {
+  event.preventDefault();
+  const f = findFirm(ewayEditingGstNo);
+  if (!f) return;
+  const g = id => document.getElementById(id).value.trim();
+  const key = ewayKey(f);
+  const data = {
+    firmKey: firmKey(f), gstNo: f.gstNo || '', firmName: f.firmName || '',
+    ewbUsername: g('ew_username'), ewbPassword: g('ew_password'),
+    ewbMobile: g('ew_mobile'), ewbEmail: g('ew_email'), notes: g('ew_notes')
+  };
+  const old = allEwayBill[key] || {};
+  const hadData = EWAY_FIELDS.some(([k]) => String(old[k]||'').trim());
+  const log = buildLog(hadData ? 'EDIT' : 'ADD','E-Way Bill',{key:firmKey(f),firmName:f.firmName,gstNo:f.gstNo},EWAY_FIELDS,old,data,'');
+  if (!log.length) { closeModal('ewayModal'); showToast('ℹ️ No changes to save.'); return; }
+
+  const btn = document.getElementById('ewaySaveBtn');
+  btn.textContent = 'Saving…'; btn.disabled = true;
+  try {
+    const result = await apiPost({ action: 'saveEwayBill', ewayData: data, log });
+    if (result.error) throw new Error(result.error);
+    allEwayBill[key] = data;
+    closeModal('ewayModal');
+    filterEwayTable();
+    showToast(`✅ E-Way Bill credentials saved for ${f.firmName||'firm'}`);
+  } catch(err) {
+    showToast('❌ ' + err.message);
+  }
+  btn.textContent = '💾 Save Credentials'; btn.disabled = false;
+}
+
+// ── REFRESH ──
+async function refreshEwayData() {
+  showToast('🔄 Refreshing E-Way Bill data…');
+  try {
+    const ed = await apiGet({ action: 'getEwayBill' });
+    if (ed.error) throw new Error(ed.error);
+    indexEwayBill(Array.isArray(ed) ? ed : []);
+    renderEwayTable(getMyFirms());
+    showToast('✅ E-Way Bill data refreshed.');
+  } catch(err) { showToast('❌ ' + err.message); }
+}
+
+// ── REFRESH ──────────────────────────────────────────────
+async function refreshData() {
+  showToast('🔄 Refreshing…');
+  try {
+    const [fd, td, ed] = await Promise.all([
+      apiGet({ action: 'getAll' }),
+      apiGet({ action: 'getTasks' }),
+      apiGet({ action: 'getEwayBill' })
+    ]);
+    if (fd.error) throw new Error(fd.error);
+    allFirms = Array.isArray(fd) ? fd : [];
+    indexTasks(Array.isArray(td) ? td : []);
+    indexEwayBill(Array.isArray(ed) ? ed : []);
+    buildStaffNames();
+    filterFirms();
+    renderStaffCards();
+    if (document.getElementById('dueModule').classList.contains('visible')) renderDueModule();
+    if (document.getElementById('ewayModule').classList.contains('visible')) filterEwayTable();
+    if (document.getElementById('statusModule').classList.contains('visible')) renderStaffStatus();
+    populateStaffFilter();
+    showToast('✅ Refreshed – ' + allFirms.length + ' firms.');
+  } catch(err) { showToast('❌ ' + err.message); }
+}
+
+async function refreshTasks() {
+  showToast('🔄 Refreshing tasks…');
+  try {
+    const td = await apiGet({ action: 'getTasks' });
+    if (td.error) throw new Error(td.error);
+    indexTasks(Array.isArray(td) ? td : []);
+    if (document.getElementById('statusModule').classList.contains('visible')) renderStaffStatus(); else renderDueModule();
+    showToast('✅ Tasks refreshed.');
+  } catch(err) { showToast('❌ ' + err.message); }
+}
+
+// ================================================================
+//  HELPERS
+// ================================================================
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+
+// ── STAFF-WISE RETURN STATUS ──
+function renderStaffStatus() {
+  updateMonthLabel();
+  const groups = {};
+  allStaffNames.forEach(n => groups[n] = []);
+  allFirms.forEach(f => { const k = (f.staff || '').toString().trim(); (groups[k] = groups[k] || []).push(f); });
+  const stats = Object.keys(groups).map(name => {
+    let total = 0, done = 0, overdue = 0, soon = 0;
+    const rows = [];
+    groups[name].forEach(f => {
+      const tasks = getTasksForMonth(f.type, viewMonth, viewYear);
+      if (!tasks.length) return;
+      let chips = '';
+      tasks.forEach(t => {
+        const saved = allTasks[taskKey(firmKey(f), viewMonth, viewYear, t.form, t.purpose)];
+        const isDone = !!(saved && saved.status === 'Done');
+        const days = daysLeft(t.dueDate);
+        total++;
+        let cls = 'sx-neutral', label = daysLabel(days);
+        if (isDone) { done++; cls = 'status-done'; label = 'Done'; }
+        else if (days < 0) { overdue++; cls = 'status-pending'; }
+        else { if (days <= 7) soon++; if (days <= 15) cls = 'status-soon'; }
+        const tip = `${t.purpose} – due ${formatDate(t.dueDate)}` + (isDone && saved.completedBy ? ` – done by ${saved.completedBy}` : '');
+        chips += `<span class="sx-chip ${cls}" title="${esc(tip)}">${esc(t.form)} · ${label}</span>`;
+      });
+      rows.push(`<div class="sx-firm"><div class="sx-firm-name">${esc(f.firmName)}</div>${chips}</div>`);
+    });
+    return { name, firms: groups[name].length, total, done, overdue, soon, rows };
+  }).filter(x => x.firms || x.name);
+  stats.sort((a, b) => b.overdue - a.overdue || (a.name || '~').localeCompare(b.name || '~'));
+
+  const sum = k => stats.reduce((n, x) => n + x[k], 0);
+  document.getElementById('statusSummary').innerHTML = `
+    <div class="summary-card"><div class="summary-num">${stats.length}</div><div class="summary-label">Staff</div></div>
+    <div class="summary-card"><div class="summary-num">${sum('done')}/${sum('total')}</div><div class="summary-label">Returns Completed</div></div>
+    <div class="summary-card danger"><div class="summary-num">${sum('overdue')}</div><div class="summary-label">Overdue</div></div>
+    <div class="summary-card warn"><div class="summary-num">${sum('soon')}</div><div class="summary-label">Due within 7 days</div></div>`;
+
+  const wrap = document.getElementById('statusWrap');
+  wrap.innerHTML = '';
+  const grid = document.createElement('div');
+  grid.className = 'task-overview-grid';
+  stats.forEach((x, i) => {
+    const uid = 'sx_' + i;
+    const pct = x.total ? Math.round(x.done / x.total * 100) : 0;
+    const block = document.createElement('div');
+    block.className = 'task-firm-block';
+    block.innerHTML = `
+      <div class="task-firm-head" onclick="toggleTaskBlock('${uid}')">
+        <span class="task-firm-head-name">${esc(x.name || 'Unassigned')}${x.name && x.name === currentStaff ? ' (me)' : ''}</span>
+        <div class="task-firm-head-meta">
+          <span class="meta-pill" style="font-size:10px;">${x.firms} firm${x.firms !== 1 ? 's' : ''}</span>
+          <span class="meta-pill" style="font-size:10px;background:${x.total && x.done === x.total ? 'rgba(30,122,75,.4)' : 'rgba(192,57,43,.3)'};">${x.done}/${x.total} done</span>
+          ${x.overdue ? `<span class="meta-pill" style="font-size:10px;background:rgba(192,57,43,.55);">${x.overdue} overdue</span>` : ''}
+        </div>
+        <span class="task-collapse" id="tc_${uid}">▼</span>
+      </div>
+      <div class="progress-bar-wrap" style="height:3px;border-radius:0;"><div class="progress-bar" style="width:${pct}%;border-radius:0;"></div></div>
+      <div class="task-firm-body" id="${uid}">${x.rows.join('') || '<div class="sx-firm" style="color:var(--slate);font-size:12.5px;">No returns fall due this month.</div>'}</div>`;
+    grid.appendChild(block);
+  });
+  wrap.appendChild(grid);
+}
+
+// ── CHANGE OWN PASSWORD ──
+function openPwModal() {
+  ['pw_old','pw_new','pw_new2'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('pwError').textContent = '';
+  openModal('pwModal');
+}
+async function submitPwChange(ev) {
+  ev.preventDefault();
+  const o = document.getElementById('pw_old').value, n = document.getElementById('pw_new').value, n2 = document.getElementById('pw_new2').value;
+  const errEl = document.getElementById('pwError'), btn = document.getElementById('pwBtn');
+  if (n.length < 6) { errEl.textContent = 'New password must be at least 6 characters.'; return; }
+  if (n !== n2)     { errEl.textContent = 'New passwords do not match.'; return; }
+  btn.disabled = true; btn.textContent = 'Saving…'; errEl.textContent = '';
+  try {
+    const r = await apiPost({ action: 'changePassword', oldPassword: o, newPassword: n });
+    if (r.error) throw new Error(r.error);
+    closeModal('pwModal');
+    showToast('✅ Password changed.');
+  } catch (err) { errEl.textContent = err.message; }
+  btn.disabled = false; btn.textContent = 'Save';
+}
+
+// ── GST PORTAL AUTO-TYPE ──
+// A web page cannot type into another site, so the Login button opens the GST page in a window
+// whose name carries the credentials; the "GST Auto-Type" bookmark (below) reads them there and
+// types them key by key. Nothing goes through the clipboard or the URL.
+function gstLogin(key) {
+  const f = findFirm(key);
+  if (!f) return;
+  if (!f.username || !f.password) { showToast('⚠ Username / password not saved for this firm.'); return; }
+  const data = btoa(unescape(encodeURIComponent(JSON.stringify({ u: f.username, p: f.password }))));
+  window.open('https://services.gst.gov.in/services/login', 'gstat:' + data);
+  showToast('🔐 GST page opened – click the "GST Auto-Type" bookmark there.');
+}
+function gstAutoTypeBookmarklet() {
+  var raw = window.name || '';
+  if (raw.indexOf('gstat:') !== 0) { alert('Open this page with the Login button in the Client Portal first.'); return; }
+  var d;
+  try { d = JSON.parse(decodeURIComponent(escape(atob(raw.slice(6))))); } catch (e) { alert('Login data could not be read.'); return; }
+  window.name = '';
+  function wait(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+  function shown(el) { return !!(el.offsetWidth || el.offsetHeight || el.getClientRects().length); }
+  function pick(sels, relaxed) {
+    for (var s = 0; s < sels.length; s++) {
+      var list = document.querySelectorAll(sels[s]);
+      for (var i = 0; i < list.length; i++) {
+        var el = list[i];
+        if (!el.disabled && !el.readOnly && (relaxed || shown(el))) return el;
+      }
+    }
+    return null;
+  }
+  async function find(sels) {
+    for (var i = 0; i < 60; i++) { var el = pick(sels, i > 30); if (el) return el; await wait(200); }
+    return null;
+  }
+  var setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set;
+  async function typeInto(el, text, mode) {
+    el.focus(); el.click();
+    if (mode === 'exec') { el.select(); document.execCommand('delete'); }
+    else { setter.call(el, ''); el.dispatchEvent(new Event('input', { bubbles: true })); }
+    for (var i = 0; i < text.length; i++) {
+      var ch = text.charAt(i), o = { key: ch, bubbles: true };
+      el.dispatchEvent(new KeyboardEvent('keydown', o));
+      el.dispatchEvent(new KeyboardEvent('keypress', o));
+      if (mode === 'exec') { document.execCommand('insertText', false, ch); }
+      else {
+        setter.call(el, el.value + ch);
+        el.dispatchEvent(new InputEvent('input', { data: ch, inputType: 'insertText', bubbles: true }));
+      }
+      el.dispatchEvent(new KeyboardEvent('keyup', o));
+      await wait(70 + Math.random() * 90);
+    }
+    el.dispatchEvent(new Event('change', { bubbles: true }));
+    return el.value === text;
+  }
+  async function fill(sels, text) {
+    for (var attempt = 0; attempt < 4; attempt++) {
+      var el = await find(sels);
+      if (!el) return false;
+      var ok = await typeInto(el, text, attempt === 0 ? 'set' : (attempt % 2 ? 'exec' : 'set'));
+      el.dispatchEvent(new Event('blur', { bubbles: true }));
+      if (el.blur) el.blur();
+      if (ok) return true;
+      await wait(500);
+    }
+    return false;
+  }
+  (async function () {
+    var okU = await fill(['#username', 'input[name="username"]', 'input[autocomplete="username"]', 'input[type="text"]'], d.u);
+    await wait(800);
+    var okP = await fill(['#user_pass', 'input[name="user_pass"]', 'input[type="password"]', 'input[name="password"]', 'input[formcontrolname="password"]'], d.p);
+    if (!okU || !okP) {
+      var seen = [].slice.call(document.querySelectorAll('input')).map(function (i) { return (i.id || '-') + '/' + (i.name || '-') + '/' + i.type + (shown(i) ? '' : '/hidden') + (i.disabled ? '/disabled' : ''); }).join('\n');
+      alert((okU ? '' : 'Username not typed. ') + (okP ? '' : 'Password not typed. ') + 'Please type manually.\n\nFields on this page:\n' + seen);
+      return;
+    }
+    var c = pick(['#captcha', 'input[name="captcha"]'], true);
+    if (c) c.focus();
+  })();
+}
+document.getElementById('bookmarkletLink').href = 'javascript:(' + encodeURIComponent(gstAutoTypeBookmarklet.toString()) + ')()';
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent=msg; t.style.display='block';
+  clearTimeout(t._timer);
+  t._timer = setTimeout(()=>{ t.style.display='none'; }, 3800);
+}
+
+document.querySelectorAll('.modal-overlay').forEach(o => {
+  o.addEventListener('click', e => { if(e.target===o) o.classList.remove('open'); });
+});
+</script>
+</body>
+</html>
